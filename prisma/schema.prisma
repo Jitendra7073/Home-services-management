@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ENUMS
+
+enum Role {
+  customer
+  provider
+}
+
+enum WeekDays {
+  Sunday
+  Monday
+  Tuesday
+  Wednesday
+  Thursday
+  Friday
+  Saturday
+}
+
+enum ServiceStatus {
+  Pending
+  Confirmed
+  Cancel
+}
+
+// USER MODEL
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  mobile    String
+  password  String
+  role      Role     @default(customer)
+  createdAt DateTime @default(now())
+
+  // Relations
+  addresses       Address[]
+  businessProfile BusinessProfile?
+  bookings        Booking[]
+  slotsBooked     Slot[]           @relation("SlotBooking")
+  feedbacks       Feedback[]
+
+  @@index([email])
+}
+
+// RESET PASSWORD TOEKN STORE 
+
+model resetToken{
+  id String @id @default(uuid())
+  userId String
+  token String @unique
+  expiresAt DateTime
+}
+
+// BUSINESS PROFILE
+
+model BusinessProfile {
+  id String @id @default(uuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Business Identity
+  businessName String
+  businessType String
+
+  // Contact & Communication
+  contactEmail String
+  phoneNumber  String
+  websiteURL   String?
+  socialLinks  String?
+
+  // Business Status
+  isActive Boolean @default(true)
+
+  // Relations
+  services Service[]
+  slots    Slot[]
+  Booking  Booking[]
+
+  @@index([businessName, businessType])
+}
+
+// ADDRESS
+
+model Address {
+  id         String  @id @default(uuid())
+  street     String
+  city       String
+  state      String
+  postalCode String
+  country    String
+  landmark   String
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+// SERVICE
+
+model Service {
+  id String @id @default(cuid())
+
+  // Basic Info
+  name              String
+  description       String?
+  category          String
+  durationInMinutes Int
+  price             Int
+  currency          String  @default("INR")
+  isActive          Boolean @default(true)
+
+  // Media & Display
+  coverImage String?
+  images     String?
+
+  // Rating & Reviews
+  averageRating Float? @default(0)
+  reviewCount   Int    @default(0)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  businessProfileId String
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id])
+  slots             Slot[]
+  bookings          Booking[]
+}
+
+// SLOT
+
+model Slot {
+  id        String   @id @default(uuid())
+  date      DateTime
+  startTime String
+  endTime   String
+  isBooked  Boolean  @default(false)
+
+  // Relation to Service
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  // Relation to Business Profile
+  businessProfileId String?
+  businessProfile   BusinessProfile? @relation(fields: [businessProfileId], references: [id])
+
+  // Relation to User 
+  bookedById String?
+  bookedBy   User?   @relation("SlotBooking", fields: [bookedById], references: [id])
+
+  // Relation to bookings
+  bookings Booking[]
+
+  @@unique([date, startTime, serviceId])
+}
+
+// BOOKING
+
+model Booking {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+
+  businessProfileId String
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id])
+
+  slotId String?
+  slot   Slot?   @relation(fields: [slotId], references: [id])
+
+  status    ServiceStatus @default(Pending)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  feedback Feedback?
+}
+
+// FEEDBACK
+
+model Feedback {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  bookingId String  @unique
+  booking   Booking @relation(fields: [bookingId], references: [id])
+}
