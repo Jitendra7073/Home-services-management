@@ -1,6 +1,7 @@
 const prisma = require("../prismaClient");
 // VALIDATION SCHEMA
 const { businessProfileSchema, serviceProfileSchema, slotProfileSchema } = require("../helper/validation/provider.validation");
+<<<<<<< HEAD
 const { AddressValidation } = require("../helper/validation/address.validation");
 
 
@@ -76,6 +77,10 @@ const deleteAddress = async (req, res) => {
         });
     }
 };
+=======
+const { sendMail } = require("../utils/sendMail");
+const { slotBookingStatusTemplate } = require("../helper/mail-tamplates/tamplates");
+>>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
 
 // CREATE BUSINESS
 const createBusiness = async (req, res) => {
@@ -550,6 +555,7 @@ const deleteService = async (req, res) => {
 
 // CREATE SLOT
 const createSlot = async (req, res) => {
+<<<<<<< HEAD
   const userId = req.user.id;
 
   // Validate input
@@ -647,13 +653,116 @@ const createSlot = async (req, res) => {
       msg: "Server Error: Could not create slot.",
     });
   }
+=======
+    const userId = req.user.id;
+
+    // Validate input
+    const { error, value } = slotProfileSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+        return res.status(400).json({
+            success: false,
+            msg: error.details.map((e) => e.message),
+        });
+    }
+
+    try {
+        // Check if provider's business profile exists
+        const business = await prisma.BusinessProfile.findUnique({
+            where: { userId },
+        });
+
+        if (!business) {
+            return res.status(404).json({
+                success: false,
+                msg: "Business profile not found. Please create one first.",
+            });
+        }
+
+        // Verify that the service exists and belongs to this business
+        const service = await prisma.Service.findFirst({
+            where: {
+                id: value.serviceId,
+                businessProfileId: business.id,
+            },
+        });
+
+        if (!service) {
+            return res.status(404).json({
+                success: false,
+                msg: "Service not found or does not belong to your business.",
+            });
+        }
+
+        // Parse times safely
+        const newSlotStart = new Date(`${value.date}T${value.startTime}:00Z`);
+        const newSlotEnd = new Date(`${value.date}T${value.endTime}:00Z`);
+
+        if (newSlotStart >= newSlotEnd) {
+            return res.status(400).json({
+                success: false,
+                msg: "End time must be greater than start time.",
+            });
+        }
+
+        // Find all existing slots for this service on the same date
+        const existingSlots = await prisma.Slot.findMany({
+            where: {
+                serviceId: value.serviceId,
+                date: new Date(value.date),
+            },
+        });
+
+        // Check for overlapping time intervals (same service only)
+        const overlap = existingSlots.some(slot => {
+            const existingStart = new Date(`${slot.date.toISOString().split("T")[0]}T${slot.startTime}:00Z`);
+            const existingEnd = new Date(`${slot.date.toISOString().split("T")[0]}T${slot.endTime}:00Z`);
+
+            return newSlotStart < existingEnd && newSlotEnd > existingStart;
+        });
+
+        if (overlap) {
+            return res.status(400).json({
+                success: false,
+                msg: "This time slot overlaps with an existing slot for the same service.",
+            });
+        }
+
+        // Create slot
+        const newSlot = await prisma.Slot.create({
+            data: {
+                date: new Date(value.date),
+                startTime: value.startTime,
+                endTime: value.endTime,
+                serviceId: service.id,
+                businessProfileId: business.id,
+            },
+        });
+
+        return res.status(201).json({
+            success: true,
+            msg: "Slot created successfully.",
+            slot: newSlot,
+        });
+
+    } catch (err) {
+        console.error("Error creating slot:", err);
+        return res.status(500).json({
+            success: false,
+            msg: "Server Error: Could not create slot.",
+        });
+    }
+>>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
 };
 
 // GET ALL SLOTS BY SERVICE ID
 const getAllSlotsByServiceId = async (req, res) => {
     const userId = req.user.id;
     const { serviceId } = req.params;
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
     try {
         // Check if provider's business profile exists
         const business = await prisma.BusinessProfile.findUnique({
@@ -766,11 +875,147 @@ const deleteSlot = async (req, res) => {
     }
 }
 
+<<<<<<< HEAD
 module.exports = {
     // ADDRESS
     addAddress,
     deleteAddress,
 
+=======
+// BOOKING LIST
+const bookingList = async (req, res) => {
+    const userId = req.user.id;
+
+    const businessProfile = await prisma.BusinessProfile.findUnique({
+        where: { userId },
+    });
+
+    if (!businessProfile) {
+        return res.status(404).json({
+            success: false,
+            msg: "Business profile not found for this user.",
+        });
+    }
+    const businessId = businessProfile.id;
+
+    const bookings = await prisma.Booking.findMany({
+        where: {
+            businessProfileId: businessId,
+        },
+        orderBy: { createdAt: "desc" },
+    });
+
+    if (bookings.length === 0) {
+        return res.status(200).json({
+            success: true,
+            msg: "No bookings found for this business.",
+            count: 0,
+            bookings: [],
+        });
+    }
+
+    return res.status(200).json({
+        success: true,
+        msg: "Bookings fetched successfully.",
+        count: bookings.length,
+        bookings,
+    });
+}
+
+// UPDATE BOOKING STATUS
+const updateBookingStatus = async (req, res) => {
+    // const userId = req.user.id;
+    const { bookingId } = req.params;
+
+    if (!bookingId) {
+        return res.status(400).json({
+            success: false,
+            msg: "Booking ID is required.",
+        });
+    }
+
+    let { status } = req.body;
+    status = status.charAt(0).toUpperCase() + status.toLowerCase().slice(1);
+
+    if (!status || status === "") {
+        return res.status(400).json({
+            success: false,
+            msg: "Status is required.",
+        });
+    }
+
+    try {
+
+        const bookingDetails = await prisma.Booking.findUnique({
+            where: { id: bookingId },
+        });
+
+        if (!bookingDetails) {
+            return res.status(404).json({
+                success: false,
+                msg: "Booking not found.",
+            });
+        }
+
+        if (status === bookingDetails.status) {
+            return res.status(404).json({
+                success: false,
+                msg: "No new changes detected. Booking status not updated.",
+            })
+        }
+        const updatedBooking = await prisma.Booking.update({
+            where: { id: bookingId },
+            data: { status },
+        });
+
+        console.log("Booking details :", bookingDetails)
+
+        // User how booked the service
+        const user = await prisma.User.findUnique({
+            where: { id: bookingDetails.userId },
+        });
+
+        // service which one is booked by user
+        const service = await prisma.Service.findUnique({
+            where: { id: bookingDetails.serviceId },
+        });
+
+        //service booked slot details
+        const slot = await prisma.Slot.findUnique({
+            where: { id: bookingDetails.slotId },
+        });
+
+        await sendMail({
+            email: user.email,
+            subject: "Booking Status Updated",
+            template: slotBookingStatusTemplate(
+                user.name,
+                service.name,
+                bookingDetails.createdAt,
+                slot.startTime,
+                slot.endTime,
+                status,
+            )
+        })
+        return res.status(200).json({   
+            success: true,
+            msg: "Booking status updated successfully.",
+            updatedBooking
+        });
+    } catch (err) {
+
+        console.error("Error updating booking status:", err);
+        return res.status(500).json({
+            success: false,
+            msg: "Server Error: Could not update booking status.",
+        });
+    }
+
+
+}
+
+module.exports = {
+>>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
     // BUSINESS 
     createBusiness,
     getBusinessProfile,
@@ -786,6 +1031,14 @@ module.exports = {
     // SLOTS
     createSlot,
     getAllSlotsByServiceId,
+<<<<<<< HEAD
     deleteSlot
 
+=======
+    deleteSlot,
+
+    // BOOKING
+    bookingList,
+    updateBookingStatus
+>>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
 };

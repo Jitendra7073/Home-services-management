@@ -1,10 +1,13 @@
 const express = require("express");
 const route = express.Router();
 
+<<<<<<< HEAD
 // MiddleWare
 const {IsCustomer} = require("../middleware/IsCustomer");
 route.use(IsCustomer());
 
+=======
+>>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
 // CONTROLLER
 const CustomerController = require("../controllers/customer.controller");
 

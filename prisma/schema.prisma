@@ -24,10 +24,18 @@ enum WeekDays {
   Saturday
 }
 
+
 enum ServiceStatus {
-  Pending
-  Confirmed
-  Cancel
+  Pending   
+  Confirmed 
+  Inprogress
+  OnHold    
+  Completed 
+  Cancelled 
+  Rejected  
+  Failed    
+  Refunded  
+  Closed     
 }
 
 // USER MODEL
@@ -98,7 +106,7 @@ model Address {
   state      String
   postalCode String
   country    String
-  landmark   String
+  landmark   String @default("N/A") 
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id])

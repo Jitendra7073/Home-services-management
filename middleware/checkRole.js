@@ -1,23 +1,19 @@
 const prisma = require("../prismaClient");
 
-const checkUserRole =  () => {
-    return async (req, res, next) => {
+const RoleBasedAccess = (role) => {
+  return async (req, res, next) => {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+    });
 
-        const user = await prisma.user.findUnique({
-            where: { id : req.user.id }
-        })
-
-
-        if (user.role != "provider") {
-            return res.status(403).json({
-                success: false,
-                message: "Access denied. Only service providers can perform this action.",
-            });
-        }
-        return next()
-
+    if (user.role != role) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Unauthorized User.",
+      });
     }
-}
+    return next();
+  };
+};
 
-
-module.exports = { checkUserRole };
+module.exports = { RoleBasedAccess };

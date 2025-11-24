@@ -1,4 +1,9 @@
 const prisma = require("../prismaClient");
+<<<<<<< HEAD
+=======
+const { slotBookingTemplate } = require("../helper/mail-tamplates/tamplates");
+const { sendMail } = require("../utils/sendMail");
+>>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
 
 // USER PROFILE
 const getUserProfile = async (req, res) => {
@@ -65,7 +70,11 @@ const getAllProviders = async (req, res) => {
                     endTime: true,
                     isBooked: true,
                   },
+<<<<<<< HEAD
                   where: { isBooked: false }, // only available slots
+=======
+                  // where: { isBooked: false }, 
+>>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
                 },
               },
             },
@@ -152,7 +161,11 @@ const getProviderById = async (req, res) => {
 const bookSlot = async (req, res) => {
 
   const customerId = req.user.id;
+<<<<<<< HEAD
   const { serviceId, slotId } = req.body; 
+=======
+  const { serviceId, slotId } = req.body;
+>>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
 
   if (!serviceId || !slotId) {
     return res.status(400).json({
@@ -162,6 +175,7 @@ const bookSlot = async (req, res) => {
   }
 
   try {
+<<<<<<< HEAD
     // Start a transaction to avoid race conditions
     const booking = await prisma.$transaction(async (prisma) => {
       // Fetch the slot and ensure it belongs to the specified service
@@ -197,13 +211,72 @@ const bookSlot = async (req, res) => {
       });
 
       return newBooking;
+=======
+
+    const slot = await prisma.slot.findFirst({
+      where: {
+        id: slotId,
+        serviceId: serviceId,
+      },
+      include: {
+        service: true,
+        businessProfile: true,
+      },
+    });
+
+    if (!slot) {
+      return res.status(400).json({
+        success: false,
+        msg: "Slot not found for the selected service.",
+      });
+    }
+
+    if (slot.isBooked) {
+      return res.status(400).json({
+        success: false,
+        msg: "This slot is already booked.",
+      });
+    }
+
+    // Create the booking
+    const newBooking = await prisma.booking.create({
+      data: {
+        userId: customerId,
+        serviceId: serviceId,
+        slotId: slot.id,
+        businessProfileId: slot.businessProfileId,
+        status: "Pending", // initial status
+      },
+    });
+
+    const user = await prisma.user.findUnique({
+      where: { id: customerId },
+    });
+
+    // Mark the slot as booked
+    await prisma.slot.update({
+      where: { id: slotId },
+      data: { isBooked: true },
+    });
+
+     await sendMail({
+      email: user.email,
+      subject: "Slot Booking Confirmation",
+      template: slotBookingTemplate(user.name, slot.service.name, slot.date, slot.startTime, slot.endTime)
+>>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
     });
 
     return res.status(201).json({
       success: true,
       msg: "Slot booked successfully.",
+<<<<<<< HEAD
       booking,
     });
+=======
+      newBooking,
+    });
+
+>>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
   } catch (err) {
     console.error("Booking Error:", err);
     return res.status(400).json({
@@ -221,7 +294,28 @@ const getCustomerBookings = async (req, res) => {
     const bookings = await prisma.Booking.findMany({
       where: { userId: customerId },
       include: {
+<<<<<<< HEAD
         slot: { include: { service: true, businessProfile: { include: { user: true } } } },
+=======
+        slot: {
+          include: {
+            service: true, businessProfile: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    mobile: true,
+                    role: true,
+                    createdAt: true,
+                  },
+                }
+              }
+            }
+          }
+        },
+>>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
         service: true,
       },
       orderBy: { createdAt: "desc" },
