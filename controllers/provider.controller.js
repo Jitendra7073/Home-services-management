@@ -5,7 +5,7 @@ const {
   serviceProfileSchema,
   slotProfileSchema,
 } = require("../helper/validation/provider.validation");
-const { jsonMail } = require("../utils/jsonMail");
+const { sendMail } = require("../utils/sendmail");
 const {
   slotBookingStatusTemplate,
 } = require("../helper/mail-tamplates/tamplates");
@@ -78,6 +78,7 @@ const createBusiness = async (req, res) => {
     return res.status(500).json({
       success: false,
       msg: "Server Error: Could not create business.",
+      err,
     });
   }
 };
@@ -796,22 +797,22 @@ const updateBookingStatus = async (req, res) => {
       data: { status },
     });
 
-    // User how booked the service
+    // User who booked the service
     const user = await prisma.User.findUnique({
       where: { id: bookingDetails.userId },
     });
 
-    // service which one is booked by user
+    // service booked by user
     const service = await prisma.Service.findUnique({
       where: { id: bookingDetails.serviceId },
     });
 
-    //service booked slot details
+    // booked slot details
     const slot = await prisma.Slot.findUnique({
       where: { id: bookingDetails.slotId },
     });
 
-    await jsonMail({
+    await sendMail({
       email: user.email,
       subject: "Booking Status Updated",
       template: slotBookingStatusTemplate(

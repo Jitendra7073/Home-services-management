@@ -29,7 +29,7 @@ enum ServiceStatus {
   Pending   
   Confirmed 
   Inprogress
-  OnHold    
+  Onhold    
   Completed 
   Cancelled 
   Rejected  
@@ -37,6 +37,37 @@ enum ServiceStatus {
   Refunded  
   Closed     
 }
+
+enum BusinessCategory {
+  plumbing
+  electrical_work
+  carpentry
+  cleaning_services
+  appliance_repair
+  home_repair_and_maintenance
+  security_and_cctv
+  pest_control
+  painting_and_decoration
+  welding_and_metal_work
+  masonry_and_construction
+  roofing_and_waterproofing
+  gardening_and_landscaping
+  movers_and_packers
+  furniture_and_woodwork
+  beauty_and_salon
+  massage_and_wellness
+  food_and_cooking
+  vehicle_services
+  education_and_training
+  care_services
+  pet_services
+  photography_and_media
+  event_management
+  interior_design
+  laundry_and_household
+  driver_and_transport
+}
+
 
 // USER MODEL
 
@@ -78,7 +109,7 @@ model BusinessProfile {
 
   // Business Identity
   businessName String
-  businessType String
+  businessType BusinessCategory @default(plumbing)
 
   // Contact & Communication
   contactEmail String
