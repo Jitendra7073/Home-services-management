@@ -170,7 +170,6 @@ model Slot {
   // Relation to bookings
   bookings Booking[]
 
-  @@unique([date, startTime, serviceId])
 }
 
 // BOOKING

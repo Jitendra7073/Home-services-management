@@ -5,7 +5,7 @@ const {
   serviceProfileSchema,
   slotProfileSchema,
 } = require("../helper/validation/provider.validation");
-const { sendMail } = require("../utils/sendMail");
+const { jsonMail } = require("../utils/jsonMail");
 const {
   slotBookingStatusTemplate,
 } = require("../helper/mail-tamplates/tamplates");
@@ -17,7 +17,7 @@ const createBusiness = async (req, res) => {
   const { error, value } = businessProfileSchema.validate(req.body);
 
   if (error) {
-    return res.status(400).send({
+    return res.status(422).json({
       success: false,
       msg: error.details.map((e) => e.message),
     });
@@ -29,8 +29,25 @@ const createBusiness = async (req, res) => {
       where: { userId },
     });
 
+    // get all businesses
+    const allBusinesses = await prisma.BusinessProfile.findMany();
+
+    const isBusinessEmailExist = allBusinesses.some((business) => {
+      return (
+        business.contactEmail === value.contactEmail ||
+        business.phoneNumber === value.phoneNumber
+      );
+    });
+
+    if (isBusinessEmailExist) {
+      return res.status(400).json({
+        success: false,
+        msg: "This Business is already taken by another Provider",
+      });
+    }
+
     if (isBusinessExist) {
-      return res.status(400).send({
+      return res.status(400).json({
         success: false,
         msg: "Business already exist.",
       });
@@ -42,7 +59,7 @@ const createBusiness = async (req, res) => {
     });
 
     if (!isAddressExist) {
-      return res.status(400).send({
+      return res.status(400).json({
         success: false,
         msg: "Address not found. Please add your address first.",
       });
@@ -52,14 +69,13 @@ const createBusiness = async (req, res) => {
       data: { ...value, userId },
     });
 
-    return res.status(201).send({
+    return res.status(201).json({
       success: true,
       msg: "Business created successfully.",
       business: newBusiness,
     });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).send({
+  } catch (err) {
+    return res.status(500).json({
       success: false,
       msg: "Server Error: Could not create business.",
     });
@@ -73,15 +89,13 @@ const getBusinessProfile = async (req, res) => {
     const businessDetails = await prisma.BusinessProfile.findUnique({
       where: { userId },
     });
-    return res.status(200).send({
+    return res.status(200).json({
       success: true,
       msg: "Business details fetched successfully.",
       business: businessDetails,
     });
-  } catch (error) {
-    console.error(error);
-
-    return res.status(500).send({
+  } catch (err) {
+    return res.status(500).json({
       success: false,
       msg: "Server Error: Could not fetch business details.",
     });
@@ -94,7 +108,7 @@ const updateBusiness = async (req, res) => {
   const { error, value } = businessProfileSchema.validate(req.body);
 
   if (error) {
-    return res.status(400).send({
+    return res.status(422).json({
       success: false,
       msg: error.details.map((e) => e.message),
     });
@@ -106,7 +120,7 @@ const updateBusiness = async (req, res) => {
     });
 
     if (!businessDetails) {
-      return res.status(404).send({
+      return res.status(404).json({
         success: false,
         msg: "Business profile not found.",
       });
@@ -122,7 +136,7 @@ const updateBusiness = async (req, res) => {
     });
 
     if (!hasChanges) {
-      return res.status(200).send({
+      return res.status(200).json({
         success: true,
         msg: "No new changes detected.",
       });
@@ -133,14 +147,13 @@ const updateBusiness = async (req, res) => {
       data: value,
     });
 
-    return res.status(200).send({
+    return res.status(200).json({
       success: true,
       msg: "Business profile updated successfully.",
       business: updatedBusiness,
     });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).send({
+  } catch (err) {
+    return res.status(500).json({
       success: false,
       msg: "Server Error: Could not update business profile.",
     });
@@ -157,7 +170,7 @@ const deleteBusiness = async (req, res) => {
     });
 
     if (!businessDetails) {
-      return res.status(404).send({
+      return res.status(404).json({
         success: false,
         msg: "Business profile not found.",
       });
@@ -167,13 +180,12 @@ const deleteBusiness = async (req, res) => {
       where: { userId },
     });
 
-    return res.status(200).send({
+    return res.status(200).json({
       success: true,
       msg: "Business profile deleted successfully.",
     });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).send({
+  } catch (err) {
+    return res.status(500).json({
       success: false,
       msg: "Server Error: Could not delete business profile.",
     });
@@ -189,7 +201,7 @@ const createService = async (req, res) => {
     abortEarly: false,
   });
   if (error) {
-    return res.status(400).json({
+    return res.status(422).json({
       success: false,
       msg: error.details.map((e) => e.message),
     });
@@ -214,7 +226,7 @@ const createService = async (req, res) => {
     });
 
     if (!isAddressExist) {
-      return res.status(400).send({
+      return res.status(404).json({
         success: false,
         msg: "Address not found. Please add your address first.",
       });
@@ -226,7 +238,7 @@ const createService = async (req, res) => {
     });
 
     if (existingServiceCount >= 5) {
-      return res.status(400).json({
+      return res.status(507).json({
         success: false,
         msg: "You have reached the maximum limit of 5 services.",
       });
@@ -262,7 +274,6 @@ const createService = async (req, res) => {
       service: newService,
     });
   } catch (err) {
-    console.error("Error creating service:", err);
     return res.status(500).json({
       success: false,
       msg: "Server Error: Could not create service.",
@@ -310,7 +321,6 @@ const getAllServices = async (req, res) => {
       services,
     });
   } catch (err) {
-    console.error("Error fetching services:", err);
     return res.status(500).json({
       success: false,
       msg: "Server Error: Could not fetch services.",
@@ -422,7 +432,6 @@ const updateService = async (req, res) => {
       service: updatedService,
     });
   } catch (err) {
-    console.error("Error updating service:", err);
     return res.status(500).json({
       success: false,
       msg: "Server Error: Could not update service.",
@@ -473,7 +482,6 @@ const deleteService = async (req, res) => {
       msg: "Service deleted successfully.",
     });
   } catch (err) {
-    console.error("Error deleting service:", err);
     return res.status(500).json({
       success: false,
       msg: "Server Error: Could not delete service.",
@@ -524,14 +532,16 @@ const createSlot = async (req, res) => {
       });
     }
 
-    // Parse times safely
-    const newSlotStart = new Date(`${value.date}T${value.startTime}:00Z`);
-    const newSlotEnd = new Date(`${value.date}T${value.endTime}:00Z`);
+    // date must be greater or equal to today
+    const userSelectedDate = new Date(`${value.date}`)
+      .toISOString()
+      .split("T")[0];
+    const currentDate = new Date().toISOString().split("T")[0];
 
-    if (newSlotStart >= newSlotEnd) {
+    if (userSelectedDate < currentDate) {
       return res.status(400).json({
         success: false,
-        msg: "End time must be greater than start time.",
+        msg: "Booking Date must be Today or later, not in the past",
       });
     }
 
@@ -543,19 +553,22 @@ const createSlot = async (req, res) => {
       },
     });
 
-    // Check for overlapping time intervals (same service only)
-    const overlap = existingSlots.some((slot) => {
-      const existingStart = new Date(
-        `${slot.date.toISOString().split("T")[0]}T${slot.startTime}:00Z`
-      );
-      const existingEnd = new Date(
-        `${slot.date.toISOString().split("T")[0]}T${slot.endTime}:00Z`
-      );
+    const userStartTime = value.startTime;
+    const userEndTime = value.endTime;
 
-      return newSlotStart < existingEnd && newSlotEnd > existingStart;
+    const slotTimeConflict = existingSlots.some((slot) => {
+      const savedStartTime = slot.startTime;
+      const savedEndTime = slot.endTime;
+
+      return (
+        (userStartTime < savedEndTime && userEndTime > savedStartTime) ||
+        userStartTime === savedStartTime ||
+        userEndTime === savedEndTime ||
+        (userStartTime > savedStartTime && userEndTime < savedEndTime)
+      );
     });
 
-    if (overlap) {
+    if (slotTimeConflict) {
       return res.status(400).json({
         success: false,
         msg: "This time slot overlaps with an existing slot for the same service.",
@@ -579,7 +592,6 @@ const createSlot = async (req, res) => {
       slot: newSlot,
     });
   } catch (err) {
-    console.error("Error creating slot:", err);
     return res.status(500).json({
       success: false,
       msg: "Server Error: Could not create slot.",
@@ -642,7 +654,6 @@ const getAllSlotsByServiceId = async (req, res) => {
       slots,
     });
   } catch (err) {
-    console.error("Error fetching slots:", err);
     return res.status(500).json({
       success: false,
       msg: "Server Error: Could not fetch slots.",
@@ -693,7 +704,6 @@ const deleteSlot = async (req, res) => {
       msg: "Slot deleted successfully.",
     });
   } catch (err) {
-    console.error("Error deleting slot:", err);
     return res.status(500).json({
       success: false,
       msg: "Server Error: Could not delete slot.",
@@ -786,8 +796,6 @@ const updateBookingStatus = async (req, res) => {
       data: { status },
     });
 
-    console.log("Booking details :", bookingDetails);
-
     // User how booked the service
     const user = await prisma.User.findUnique({
       where: { id: bookingDetails.userId },
@@ -803,7 +811,7 @@ const updateBookingStatus = async (req, res) => {
       where: { id: bookingDetails.slotId },
     });
 
-    await sendMail({
+    await jsonMail({
       email: user.email,
       subject: "Booking Status Updated",
       template: slotBookingStatusTemplate(
@@ -821,7 +829,6 @@ const updateBookingStatus = async (req, res) => {
       updatedBooking,
     });
   } catch (err) {
-    console.error("Error updating booking status:", err);
     return res.status(500).json({
       success: false,
       msg: "Server Error: Could not update booking status.",
