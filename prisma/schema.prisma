@@ -74,7 +74,7 @@ model BusinessProfile {
   id String @id @default(uuid())
 
   userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id],onDelete: Cascade)
 
   // Business Identity
   businessName String
@@ -109,7 +109,7 @@ model Address {
   landmark   String @default("N/A") 
 
   userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id],onDelete: Cascade)
 }
 
 // SERVICE
@@ -127,6 +127,7 @@ model Service {
   isActive          Boolean @default(true)
 
   // Media & Display
+  // TODO: Remaining fields
   coverImage String?
   images     String?
 
@@ -140,7 +141,7 @@ model Service {
 
   // Relations
   businessProfileId String
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id])
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id],onDelete: Cascade)
   slots             Slot[]
   bookings          Booking[]
 }
@@ -160,11 +161,11 @@ model Slot {
 
   // Relation to Business Profile
   businessProfileId String?
-  businessProfile   BusinessProfile? @relation(fields: [businessProfileId], references: [id])
+  businessProfile   BusinessProfile? @relation(fields: [businessProfileId], references: [id],onDelete: Cascade)
 
   // Relation to User 
   bookedById String?
-  bookedBy   User?   @relation("SlotBooking", fields: [bookedById], references: [id])
+  bookedBy   User?   @relation("SlotBooking", fields: [bookedById], references: [id],onDelete: Cascade)
 
   // Relation to bookings
   bookings Booking[]
@@ -178,16 +179,16 @@ model Booking {
   id String @id @default(uuid())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id],onDelete: Cascade)
 
   serviceId String
-  service   Service @relation(fields: [serviceId], references: [id])
+  service   Service @relation(fields: [serviceId], references: [id],onDelete: Cascade)
 
   businessProfileId String
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id])
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id],onDelete: Cascade)
 
   slotId String?
-  slot   Slot?   @relation(fields: [slotId], references: [id])
+  slot   Slot?   @relation(fields: [slotId], references: [id],onDelete: Cascade)
 
   status    ServiceStatus @default(Pending)
   createdAt DateTime      @default(now())
@@ -197,7 +198,7 @@ model Booking {
 }
 
 // FEEDBACK
-
+// TODO: remaining fields
 model Feedback {
   id        String   @id @default(uuid())
   rating    Int
@@ -205,8 +206,8 @@ model Feedback {
   createdAt DateTime @default(now())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id],onDelete: Cascade)
 
   bookingId String  @unique
-  booking   Booking @relation(fields: [bookingId], references: [id])
+  booking   Booking @relation(fields: [bookingId], references: [id],onDelete: Cascade)
 }

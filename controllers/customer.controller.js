@@ -1,9 +1,8 @@
 const prisma = require("../prismaClient");
-<<<<<<< HEAD
-=======
-const { slotBookingTemplate } = require("../helper/mail-tamplates/tamplates");
+const {
+  slotBookingRequestTemplate,
+} = require("../helper/mail-tamplates/tamplates");
 const { sendMail } = require("../utils/sendMail");
->>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
 
 // USER PROFILE
 const getUserProfile = async (req, res) => {
@@ -34,7 +33,10 @@ const getUserProfile = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ success: false, msg: "Server Error: Could not fetch user profile." });
+    return res.status(500).json({
+      success: false,
+      msg: "Server Error: Could not fetch user profile.",
+    });
   }
 };
 
@@ -70,11 +72,7 @@ const getAllProviders = async (req, res) => {
                     endTime: true,
                     isBooked: true,
                   },
-<<<<<<< HEAD
-                  where: { isBooked: false }, // only available slots
-=======
-                  // where: { isBooked: false }, 
->>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
+                  // where: { isBooked: false },
                 },
               },
             },
@@ -85,7 +83,9 @@ const getAllProviders = async (req, res) => {
     });
 
     if (!providers || providers.length === 0) {
-      return res.status(200).json({ success: true, msg: "No providers found.", providers: [] });
+      return res
+        .status(200)
+        .json({ success: true, msg: "No providers found.", providers: [] });
     }
 
     return res.status(200).json({
@@ -96,7 +96,10 @@ const getAllProviders = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ success: false, msg: "Server Error: Could not fetch providers." });
+    return res.status(500).json({
+      success: false,
+      msg: "Server Error: Could not fetch providers.",
+    });
   }
 };
 
@@ -143,7 +146,9 @@ const getProviderById = async (req, res) => {
     });
 
     if (!provider) {
-      return res.status(404).json({ success: false, msg: "Provider not found." });
+      return res
+        .status(404)
+        .json({ success: false, msg: "Provider not found." });
     }
 
     return res.status(200).json({
@@ -153,19 +158,16 @@ const getProviderById = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ success: false, msg: "Server Error: Could not fetch provider." });
+    return res
+      .status(500)
+      .json({ success: false, msg: "Server Error: Could not fetch provider." });
   }
 };
 
 // BOOK SLOT
 const bookSlot = async (req, res) => {
-
   const customerId = req.user.id;
-<<<<<<< HEAD
-  const { serviceId, slotId } = req.body; 
-=======
   const { serviceId, slotId } = req.body;
->>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
 
   if (!serviceId || !slotId) {
     return res.status(400).json({
@@ -175,44 +177,6 @@ const bookSlot = async (req, res) => {
   }
 
   try {
-<<<<<<< HEAD
-    // Start a transaction to avoid race conditions
-    const booking = await prisma.$transaction(async (prisma) => {
-      // Fetch the slot and ensure it belongs to the specified service
-      const slot = await prisma.slot.findFirst({
-        where: {
-          id: slotId,
-          serviceId: serviceId,
-        },
-        include: {
-          service: true,
-          businessProfile: true,
-        },
-      });
-
-      if (!slot) throw new Error("Slot not found for the selected service.");
-      if (slot.isBooked) throw new Error("This slot is already booked.");
-
-      // Create the booking
-      const newBooking = await prisma.booking.create({
-        data: {
-          userId: customerId,
-          serviceId: serviceId,
-          slotId: slot.id,
-          businessProfileId: slot.businessProfileId,
-          status: "Pending", // initial status
-        },
-      });
-
-      // Mark the slot as booked
-      await prisma.slot.update({
-        where: { id: slotId },
-        data: { isBooked: true },
-      });
-
-      return newBooking;
-=======
-
     const slot = await prisma.slot.findFirst({
       where: {
         id: slotId,
@@ -259,24 +223,23 @@ const bookSlot = async (req, res) => {
       data: { isBooked: true },
     });
 
-     await sendMail({
+    await sendMail({
       email: user.email,
       subject: "Slot Booking Confirmation",
-      template: slotBookingTemplate(user.name, slot.service.name, slot.date, slot.startTime, slot.endTime)
->>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
+      template: slotBookingRequestTemplate(
+        user.name,
+        slot.service.name,
+        slot.date,
+        slot.startTime,
+        slot.endTime
+      ),
     });
 
     return res.status(201).json({
       success: true,
       msg: "Slot booked successfully.",
-<<<<<<< HEAD
-      booking,
-    });
-=======
       newBooking,
     });
-
->>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
   } catch (err) {
     console.error("Booking Error:", err);
     return res.status(400).json({
@@ -294,12 +257,10 @@ const getCustomerBookings = async (req, res) => {
     const bookings = await prisma.Booking.findMany({
       where: { userId: customerId },
       include: {
-<<<<<<< HEAD
-        slot: { include: { service: true, businessProfile: { include: { user: true } } } },
-=======
         slot: {
           include: {
-            service: true, businessProfile: {
+            service: true,
+            businessProfile: {
               include: {
                 user: {
                   select: {
@@ -310,12 +271,11 @@ const getCustomerBookings = async (req, res) => {
                     role: true,
                     createdAt: true,
                   },
-                }
-              }
-            }
-          }
+                },
+              },
+            },
+          },
         },
->>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
         service: true,
       },
       orderBy: { createdAt: "desc" },
@@ -329,7 +289,9 @@ const getCustomerBookings = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ success: false, msg: "Could not fetch bookings." });
+    return res
+      .status(500)
+      .json({ success: false, msg: "Could not fetch bookings." });
   }
 };
 
@@ -339,23 +301,40 @@ const cancelBooking = async (req, res) => {
   const { bookingId } = req.params;
 
   try {
-    const booking = await prisma.Booking.findUnique({ where: { id: bookingId } });
+    const booking = await prisma.Booking.findUnique({
+      where: { id: bookingId },
+    });
 
     if (!booking || booking.userId !== customerId) {
-      return res.status(404).json({ success: false, msg: "Booking not found or not yours." });
+      return res
+        .status(404)
+        .json({ success: false, msg: "Booking not found or not yours." });
     }
 
     if (booking.status !== "Pending") {
-      return res.status(400).json({ success: false, msg: `Cannot cancel a ${booking.status.toLowerCase()} booking.` });
+      return res.status(400).json({
+        success: false,
+        msg: `Cannot cancel a ${booking.status.toLowerCase()} booking.`,
+      });
     }
 
-    await prisma.booking.update({ where: { id: bookingId }, data: { status: "Cancelled" } });
-    await prisma.slot.update({ where: { id: booking.slotId }, data: { isBooked: false } });
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: { status: "Cancelled" },
+    });
+    await prisma.slot.update({
+      where: { id: booking.slotId },
+      data: { isBooked: false },
+    });
 
-    return res.status(200).json({ success: true, msg: "Booking cancelled successfully." });
+    return res
+      .status(200)
+      .json({ success: true, msg: "Booking cancelled successfully." });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ success: false, msg: "Could not cancel booking." });
+    return res
+      .status(500)
+      .json({ success: false, msg: "Could not cancel booking." });
   }
 };
 

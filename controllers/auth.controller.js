@@ -8,13 +8,13 @@ const {
   ResetPasswordSchema,
 } = require("../helper/validation/auth.validation");
 const { assignToken } = require("../helper/jwtToken");
-<<<<<<< HEAD
-=======
 const { sendMail } = require("../utils/sendMail");
 
 // Mail tamplates
-const {welcomeUserTamplate,forgotPasswordTamplate} = require("../helper/mail-tamplates/tamplates");
->>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
+const {
+  welcomeUserTamplate,
+  forgotPasswordTamplate,
+} = require("../helper/mail-tamplates/tamplates");
 
 // REGISTER
 const register = async (req, res) => {
@@ -42,17 +42,13 @@ const register = async (req, res) => {
 
     res
       .status(201)
-<<<<<<< HEAD
-      .json({ success: true, message: "User registered successfully" });
-=======
       .json({ success: true, message: "User registered successfully", user });
 
-      sendMail({
-        email: value.email,
-        subject: "Welcome to Home Service Management",
-        template: welcomeUserTamplate(value.name)
-      });
->>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
+    sendMail({
+      email: value.email,
+      subject: "Welcome to Home Service Management",
+      template: welcomeUserTamplate(value.name),
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -74,11 +70,7 @@ const login = async (req, res) => {
     if (!user)
       return res
         .status(400)
-<<<<<<< HEAD
-        .json({ success: false, message: "Invalid email or password" });
-=======
         .json({ success: false, message: "User not found" });
->>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
 
     const validPass = await bcrypt.compare(value.password, user.password);
     if (!validPass)
@@ -95,12 +87,10 @@ const login = async (req, res) => {
       maxAge: 60 * 60 * 1000,
     });
 
-<<<<<<< HEAD
-    res.status(200).json({ success: true, token });
-=======
     // sendMail();
-    res.status(200).json({ success: true, message:"Login Successfully", token });
->>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
+    res
+      .status(200)
+      .json({ success: true, message: "Login Successfully", token });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error" });
   }
@@ -130,21 +120,18 @@ const forgotPassword = async (req, res) => {
       data: { token, userId: user.id, expiresAt },
     });
 
-<<<<<<< HEAD
-    res
-      .status(200)
-      .json({ success: true, message: "Reset link generated", token });
-=======
     await sendMail({
-      email:value.email,
-      subject:"Password Reset Request",
-      template: forgotPasswordTamplate(user.name, token)
-    })
+      email: value.email,
+      subject: "Password Reset Request",
+      template: forgotPasswordTamplate(user.name, token),
+    });
     res
       .status(200)
-      .json({ success: true, message: `Reset link Sended Successfully to ${value.email}`, token });
-
->>>>>>> c159425d0b335aa35324500577fa1c6a1c6c306c
+      .json({
+        success: true,
+        message: `Reset link Sended Successfully to ${value.email}`,
+        token,
+      });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error" });
   }
