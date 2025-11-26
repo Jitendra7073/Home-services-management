@@ -1,4 +1,4 @@
-name: CI-CD Next.js Deployment
+name: CI-CD Backend Deployment
 
 on:
   push:
@@ -7,85 +7,51 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
-      SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
-      SENDER_EMAIL_PASSWORD: ${{ secrets.SENDER_EMAIL_PASSWORD }}
+      DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/home-services-backend:latest
 
     steps:
-      # ============================
-      # 1. Download Your Repository
-      # Explanation: Download the Repo into the CI machine.
-      # ============================
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # ============================
-      # 2. Setup Node Environment
-      # Explanation: Setup Node.js environment for the project.
-      # ============================
-      - name: Use Node.js 18
-        uses: actions/setup-node@v3
-        with:
-          node-version: "20.10.0"
+      - name: Set up QEMU (for cross-arch, optional)
+        uses: docker/setup-qemu-action@v2
 
-      # ============================
-      # 3. Install Dependencies
-      # Explanation: Install all the project dependencies.
-      # ============================
-      - name: Install dependencies
-        run: npm install
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      # ============================
-      # 4. Build Next.js Project
-      # Explanation: Build the Next.js project for production.
-      # ============================
-      - name: Build project
-        run: npm run build
-
-      # ============================
-      # 5. Login to DockerHub
-      # Explanation: Authenticate to DockerHub to push the Docker image.
-      # ============================
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # ============================
-      # 6. Build Docker Image
-      # Explanation: Build the Docker image for the Next.js application.
-      # ============================
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/nextjs-demo:latest .
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/home-services-backend:latest
+          # optionally add platform: linux/amd64
 
-      # ============================
-      # 7. Push Image to DockerHub
-      # Explanation: Push the built Docker image to DockerHub.
-      # ============================
-      - name: Push Docker image
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/nextjs-demo:latest
-
-      # ============================
-      # 8. Deploy to Server via SSH
-      # Explanation: Connect to the VPS and deploy the new Docker image.
-      # ============================
-      - name: Deploy to VPS
+      - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/nextjs-demo:latest
-            docker stop nextjs-demo || true
-            docker rm nextjs-demo || true
-            docker run -d --name nextjs-demo -p 3000:3000 \
+            set -e
+            IMAGE=${{ secrets.DOCKER_USERNAME }}/home-services-backend:latest
+            docker pull $IMAGE
+            docker stop home-services-backend || true
+            docker rm home-services-backend || true
+            docker run -d --name home-services-backend \
+              -p 5000:5000 \
               -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
               -e JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
               -e SENDER_EMAIL="${{ secrets.SENDER_EMAIL }}" \
               -e SENDER_EMAIL_PASSWORD="${{ secrets.SENDER_EMAIL_PASSWORD }}" \
-              ${{ secrets.DOCKER_USERNAME }}/nextjs-demo:latest
+              -e NODE_ENV=production \
+              $IMAGE
