@@ -8,7 +8,7 @@ const {
   ResetPasswordSchema,
 } = require("../helper/validation/auth.validation");
 const { assignToken } = require("../helper/jwtToken");
-const { sendMail } = require("../utils/sendMail");
+const { sendMail } = require("../utils/sendmail");
 
 // Mail tamplates
 const {
@@ -125,13 +125,11 @@ const forgotPassword = async (req, res) => {
       subject: "Password Reset Request",
       template: forgotPasswordTamplate(user.name, token),
     });
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: `Reset link Sended Successfully to ${value.email}`,
-        token,
-      });
+    res.status(200).json({
+      success: true,
+      message: `Reset link Sended Successfully to ${value.email}`,
+      token,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error" });
   }

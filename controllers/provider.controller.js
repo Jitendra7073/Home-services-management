@@ -1,4 +1,6 @@
 const prisma = require("../prismaClient");
+const { lemmatizer } = require("lemmatizer");
+
 // VALIDATION SCHEMA
 const {
   businessProfileSchema,
@@ -10,7 +12,7 @@ const {
   slotBookingStatusTemplate,
 } = require("../helper/mail-tamplates/tamplates");
 
-// CREATE BUSINESS
+// ==================================== BUSINESS ====================================
 const createBusiness = async (req, res) => {
   const userId = req.user.id;
 
@@ -24,12 +26,10 @@ const createBusiness = async (req, res) => {
   }
 
   try {
-    // CHECK IS BUSINESS EXISTS
     const isBusinessExist = await prisma.BusinessProfile.findUnique({
       where: { userId },
     });
 
-    // get all businesses
     const allBusinesses = await prisma.BusinessProfile.findMany();
 
     const isBusinessEmailExist = allBusinesses.some((business) => {
@@ -39,17 +39,10 @@ const createBusiness = async (req, res) => {
       );
     });
 
-    if (isBusinessEmailExist) {
+    if (isBusinessEmailExist || isBusinessExist) {
       return res.status(400).json({
         success: false,
-        msg: "This Business is already taken by another Provider",
-      });
-    }
-
-    if (isBusinessExist) {
-      return res.status(400).json({
-        success: false,
-        msg: "Business already exist.",
+        msg: "Business already exists!",
       });
     }
 
@@ -65,8 +58,25 @@ const createBusiness = async (req, res) => {
       });
     }
 
+    console.log("Business Type Id", value.businessCategoryId);
+    const businessCategory = await prisma.Businesscategory.findUnique({
+      where: { id: value.businessCategoryId },
+    });
+
+    if (!businessCategory) {
+      return res.status(400).json({
+        success: false,
+        msg: "Invalid Business Type. Please select a valid business category.",
+      });
+    }
+
+    const { businessCategoryId, ...businessData } = value;
     const newBusiness = await prisma.BusinessProfile.create({
-      data: { ...value, userId },
+      data: {
+        ...businessData,
+        userId,
+        businessCategoryId: businessCategory.id,
+      },
     });
 
     return res.status(201).json({
@@ -75,6 +85,7 @@ const createBusiness = async (req, res) => {
       business: newBusiness,
     });
   } catch (err) {
+    console.log(err);
     return res.status(500).json({
       success: false,
       msg: "Server Error: Could not create business.",
@@ -83,7 +94,6 @@ const createBusiness = async (req, res) => {
   }
 };
 
-// READ BUSINESS
 const getBusinessProfile = async (req, res) => {
   const userId = req.user.id;
   try {
@@ -103,7 +113,6 @@ const getBusinessProfile = async (req, res) => {
   }
 };
 
-// UPDATE BUSINESS
 const updateBusiness = async (req, res) => {
   const userId = req.user.id;
   const { error, value } = businessProfileSchema.validate(req.body);
@@ -157,11 +166,11 @@ const updateBusiness = async (req, res) => {
     return res.status(500).json({
       success: false,
       msg: "Server Error: Could not update business profile.",
+      err,
     });
   }
 };
 
-// DELETE BUSINESS
 const deleteBusiness = async (req, res) => {
   const userId = req.user.id;
 
@@ -193,7 +202,76 @@ const deleteBusiness = async (req, res) => {
   }
 };
 
-// ADD SERVICES
+// ==================================== BUSINESS CATEGORY ====================================
+const getAllBusinessCategory = async (req, res) => {
+  const businessCategory = await prisma.Businesscategory.findMany();
+  return res.status(200).json({
+    success: true,
+    msg: "Business Category fetched successfully.",
+    count: businessCategory.length,
+    businessCategory,
+  });
+};
+
+const createBusinessCategory = async (req, res) => {
+  const { name } = req.body;
+
+  if (!name.trim() || name === "" || name.length < 3) {
+    return res.status(400).json({
+      success: false,
+      msg: "Name is required and must be at least 3 characters long.",
+    });
+  }
+
+  try {
+    // Helper function to normalize a string into root words
+    const normalize = (text) =>
+      text
+        .toLowerCase()
+        .split(/\s+/) // split by space
+        .map((word) => lemmatizer(word))
+        .join(" ");
+
+    const existingCategories = await prisma.Businesscategory.findMany();
+
+    const inputNameNormalized = normalize(name.trim());
+
+    // Find similar categories based on root words
+    const similarCategories = existingCategories.filter((cat) => {
+      const catNameNormalized = normalize(cat.name);
+      return (
+        inputNameNormalized.includes(catNameNormalized) ||
+        catNameNormalized.includes(inputNameNormalized)
+      );
+    });
+
+    if (similarCategories.length > 0) {
+      return res.status(200).json({
+        success: false,
+        msg: "We found similar business categories. Please select from the suggestions.",
+        suggestions: similarCategories.map((c) => c.name),
+      });
+    }
+
+    const newCategory = await prisma.Businesscategory.create({
+      data: { name: name.toLowerCase(), createdBy: req.user.id },
+    });
+
+    return res.status(201).json({
+      success: true,
+      msg: "Business category created successfully.",
+      category: newCategory,
+    });
+  } catch (error) {
+    console.error("Business category create :", error);
+    return res.status(500).json({
+      success: false,
+      msg: "Server Error: Could not create business category.",
+    });
+  }
+};
+
+// ==================================== SERVICE ====================================
 const createService = async (req, res) => {
   const userId = req.user.id;
 
@@ -264,8 +342,8 @@ const createService = async (req, res) => {
     const newService = await prisma.Service.create({
       data: {
         ...value,
-        isActive: value.isActive === "true" || value.isActive === true,
         businessProfileId: business.id,
+        businessCategoryId: business.businessCategoryId,
       },
     });
 
@@ -282,7 +360,6 @@ const createService = async (req, res) => {
   }
 };
 
-// READ SERVICES
 const getAllServices = async (req, res) => {
   const userId = req.user.id;
 
@@ -329,7 +406,6 @@ const getAllServices = async (req, res) => {
   }
 };
 
-// UPDATE SERVICE
 const updateService = async (req, res) => {
   const userId = req.user.id;
   const { serviceId } = req.params;
@@ -423,7 +499,6 @@ const updateService = async (req, res) => {
       where: { id: serviceId },
       data: {
         ...value,
-        isActive: value.isActive === "true" || value.isActive === true,
       },
     });
 
@@ -440,7 +515,6 @@ const updateService = async (req, res) => {
   }
 };
 
-// DELETE SERVICES
 const deleteService = async (req, res) => {
   const userId = req.user.id;
   const { serviceId } = req.params;
@@ -490,7 +564,7 @@ const deleteService = async (req, res) => {
   }
 };
 
-// CREATE SLOT
+// ==================================== SLOT ====================================
 const createSlot = async (req, res) => {
   const userId = req.user.id;
 
@@ -600,7 +674,6 @@ const createSlot = async (req, res) => {
   }
 };
 
-// GET ALL SLOTS BY SERVICE ID
 const getAllSlotsByServiceId = async (req, res) => {
   const userId = req.user.id;
   const { serviceId } = req.params;
@@ -662,7 +735,6 @@ const getAllSlotsByServiceId = async (req, res) => {
   }
 };
 
-// DELETE SLOT
 const deleteSlot = async (req, res) => {
   const userId = req.user.id;
   const { slotId } = req.params;
@@ -712,7 +784,7 @@ const deleteSlot = async (req, res) => {
   }
 };
 
-// BOOKING LIST
+// ==================================== BOOKING ====================================
 const bookingList = async (req, res) => {
   const userId = req.user.id;
 
@@ -752,7 +824,6 @@ const bookingList = async (req, res) => {
   });
 };
 
-// UPDATE BOOKING STATUS
 const updateBookingStatus = async (req, res) => {
   // const userId = req.user.id;
   const { bookingId } = req.params;
@@ -858,4 +929,8 @@ module.exports = {
   // BOOKING
   bookingList,
   updateBookingStatus,
+
+  // BUSINESS CATEGORY
+  getAllBusinessCategory,
+  createBusinessCategory,
 };

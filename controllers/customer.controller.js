@@ -2,43 +2,7 @@ const prisma = require("../prismaClient");
 const {
   slotBookingRequestTemplate,
 } = require("../helper/mail-tamplates/tamplates");
-const { sendMail } = require("../utils/sendMail");
-
-// USER PROFILE
-const getUserProfile = async (req, res) => {
-  const userId = req.user.id;
-
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        mobile: true,
-        role: true,
-        createdAt: true,
-        addresses: true, // include all addresses
-      },
-    });
-
-    if (!user) {
-      return res.status(404).json({ success: false, msg: "User not found." });
-    }
-
-    return res.status(200).json({
-      success: true,
-      msg: "User profile fetched successfully.",
-      user,
-    });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({
-      success: false,
-      msg: "Server Error: Could not fetch user profile.",
-    });
-  }
-};
+const { sendMail } = require("../utils/sendmail");
 
 // PROVIDER LIST
 const getAllProviders = async (req, res) => {
@@ -339,7 +303,6 @@ const cancelBooking = async (req, res) => {
 };
 
 module.exports = {
-  getUserProfile,
   getAllProviders,
   getProviderById,
   bookSlot,

@@ -4,9 +4,6 @@ const route = express.Router();
 // CONTROLLER
 const CustomerController = require("../controllers/customer.controller");
 
-// USER PROFILE
-route.get("/profile", CustomerController.getUserProfile);
-
 // PROVIDERS
 route.get("/providers", CustomerController.getAllProviders);
 route.get("/providers/:providerId", CustomerController.getProviderById);

@@ -31,4 +31,10 @@ route.delete("/slot/:slotId", ProviderController.deleteSlot);
 route.get("/booking", ProviderController.bookingList);
 route.patch("/booking/:bookingId", ProviderController.updateBookingStatus);
 
+// Business Category Routes
+route
+  .route("/business-category")
+  .get(ProviderController.getAllBusinessCategory)
+  .post(ProviderController.createBusinessCategory);
+
 module.exports = route;

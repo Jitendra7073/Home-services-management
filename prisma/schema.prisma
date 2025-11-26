@@ -14,60 +14,28 @@ enum Role {
   provider
 }
 
-enum WeekDays {
-  Sunday
-  Monday
-  Tuesday
-  Wednesday
-  Thursday
-  Friday
-  Saturday
-}
-
+// enum WeekDays {
+//   Sunday
+//   Monday
+//   Tuesday
+//   Wednesday
+//   Thursday
+//   Friday
+//   Saturday
+// }
 
 enum ServiceStatus {
-  Pending   
-  Confirmed 
+  Pending
+  Confirmed
   Inprogress
-  Onhold    
-  Completed 
-  Cancelled 
-  Rejected  
-  Failed    
-  Refunded  
-  Closed     
+  Onhold
+  Completed
+  Cancelled
+  Rejected
+  Failed
+  Refunded
+  Closed
 }
-
-enum BusinessCategory {
-  plumbing
-  electrical_work
-  carpentry
-  cleaning_services
-  appliance_repair
-  home_repair_and_maintenance
-  security_and_cctv
-  pest_control
-  painting_and_decoration
-  welding_and_metal_work
-  masonry_and_construction
-  roofing_and_waterproofing
-  gardening_and_landscaping
-  movers_and_packers
-  furniture_and_woodwork
-  beauty_and_salon
-  massage_and_wellness
-  food_and_cooking
-  vehicle_services
-  education_and_training
-  care_services
-  pet_services
-  photography_and_media
-  event_management
-  interior_design
-  laundry_and_household
-  driver_and_transport
-}
-
 
 // USER MODEL
 
@@ -81,21 +49,22 @@ model User {
   createdAt DateTime @default(now())
 
   // Relations
-  addresses       Address[]
-  businessProfile BusinessProfile?
-  bookings        Booking[]
-  slotsBooked     Slot[]           @relation("SlotBooking")
-  feedbacks       Feedback[]
+  addresses        Address[]
+  businessProfile  BusinessProfile?
+  bookings         Booking[]
+  slotsBooked      Slot[]             @relation("SlotBooking")
+  feedbacks        Feedback[]
+  Businesscategory Businesscategory[]
 
   @@index([email])
 }
 
 // RESET PASSWORD TOEKN STORE 
 
-model resetToken{
-  id String @id @default(uuid())
-  userId String
-  token String @unique
+model resetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
   expiresAt DateTime
 }
 
@@ -105,11 +74,13 @@ model BusinessProfile {
   id String @id @default(uuid())
 
   userId String @unique
-  user   User   @relation(fields: [userId], references: [id],onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Business Identity
   businessName String
-  businessType BusinessCategory @default(plumbing)
+
+  businessCategoryId String
+  category           Businesscategory @relation(fields: [businessCategoryId], references: [id])
 
   // Contact & Communication
   contactEmail String
@@ -125,22 +96,39 @@ model BusinessProfile {
   slots    Slot[]
   Booking  Booking[]
 
-  @@index([businessName, businessType])
+  @@index([businessName, contactEmail])
+}
+
+// BUSINESS CATEGORY
+
+model Businesscategory {
+  id   String @id @default(uuid())
+  name String
+
+  // User Relation
+  createdBy String @default("admin")
+  user      User   @relation(fields: [createdBy], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  businessProfiles BusinessProfile[]
+  services         Service[]
 }
 
 // ADDRESS
 
 model Address {
-  id         String  @id @default(uuid())
+  id         String @id @default(uuid())
   street     String
   city       String
   state      String
   postalCode String
   country    String
-  landmark   String @default("N/A") 
+  landmark   String @default("N/A")
 
   userId String @unique
-  user   User   @relation(fields: [userId], references: [id],onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // SERVICE
@@ -151,7 +139,6 @@ model Service {
   // Basic Info
   name              String
   description       String?
-  category          String
   durationInMinutes Int
   price             Int
   currency          String  @default("INR")
@@ -172,9 +159,13 @@ model Service {
 
   // Relations
   businessProfileId String
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id],onDelete: Cascade)
-  slots             Slot[]
-  bookings          Booking[]
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
+  businessCategoryId String
+  category           Businesscategory @relation(fields: [businessCategoryId], references: [id])
+
+  slots    Slot[]
+  bookings Booking[]
 }
 
 // SLOT
@@ -192,15 +183,14 @@ model Slot {
 
   // Relation to Business Profile
   businessProfileId String?
-  businessProfile   BusinessProfile? @relation(fields: [businessProfileId], references: [id],onDelete: Cascade)
+  businessProfile   BusinessProfile? @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
 
   // Relation to User 
   bookedById String?
-  bookedBy   User?   @relation("SlotBooking", fields: [bookedById], references: [id],onDelete: Cascade)
+  bookedBy   User?   @relation("SlotBooking", fields: [bookedById], references: [id], onDelete: Cascade)
 
   // Relation to bookings
   bookings Booking[]
-
 }
 
 // BOOKING
@@ -209,16 +199,16 @@ model Booking {
   id String @id @default(uuid())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id],onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   serviceId String
-  service   Service @relation(fields: [serviceId], references: [id],onDelete: Cascade)
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   businessProfileId String
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id],onDelete: Cascade)
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
 
   slotId String?
-  slot   Slot?   @relation(fields: [slotId], references: [id],onDelete: Cascade)
+  slot   Slot?   @relation(fields: [slotId], references: [id], onDelete: Cascade)
 
   status    ServiceStatus @default(Pending)
   createdAt DateTime      @default(now())
@@ -236,8 +226,8 @@ model Feedback {
   createdAt DateTime @default(now())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id],onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   bookingId String  @unique
-  booking   Booking @relation(fields: [bookingId], references: [id],onDelete: Cascade)
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }

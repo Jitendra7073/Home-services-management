@@ -19,6 +19,7 @@
     "express": "^5.1.0",
     "joi": "^18.0.1",
     "jsonwebtoken": "^9.0.2",
+    "lemmatizer": "^0.0.1",
     "nodemailer": "^7.0.10",
     "pg": "^8.16.3",
     "resend": "^6.5.2"
