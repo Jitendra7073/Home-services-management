@@ -38,7 +38,7 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/home-services-backend:latest
 
       # -------------------------
-      # 4. Deploy to VPS via SSH
+      # 4. Deploy to VPS via SSH (SSH key in proper format incliuding Headers- lines- footers)
       # -------------------------
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
