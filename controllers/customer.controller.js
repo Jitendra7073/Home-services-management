@@ -18,7 +18,6 @@ const getAllProviders = async (req, res) => {
           select: {
             id: true,
             businessName: true,
-            businessType: true,
             isActive: true,
             services: {
               select: {
@@ -83,7 +82,6 @@ const getProviderById = async (req, res) => {
           select: {
             id: true,
             businessName: true,
-            businessType: true,
             services: {
               select: {
                 id: true,
