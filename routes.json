@@ -1,0 +1,606 @@
+{
+  "routes": [
+    {
+      "group": "auth",
+      "method": "POST",
+      "path": "/register",
+      "authRequired": false,
+      "payload": {
+        "type": "body",
+        "schema": {
+          "role": "string (\"customer\" | \"provider\")",
+          "name": "string",
+          "email": "string (email)",
+          "mobile": "string (10 digits)",
+          "password": "string (min 6 chars)"
+        },
+        "example": {
+          "role": "customer",
+          "name": "Jane Doe",
+          "email": "jane@example.com",
+          "mobile": "9876543210",
+          "password": "secret123"
+        }
+      },
+      "responses": {
+        "201": {
+          "success": true,
+          "message": "User registered successfully",
+          "user": { "id": "string", "name": "string", "email": "string" }
+        },
+        "400": {
+          "success": false,
+          "errors": ["validation messages"],
+          "message": "User already registered"
+        },
+        "500": { "success": false, "message": "Server error" }
+      }
+    },
+    {
+      "group": "auth",
+      "method": "POST",
+      "path": "/login",
+      "authRequired": false,
+      "payload": {
+        "type": "body",
+        "schema": { "email": "string", "password": "string" },
+        "example": { "email": "jane@example.com", "password": "secret123" }
+      },
+      "responses": {
+        "200": {
+          "success": true,
+          "message": "Login Successfully",
+          "token": "jwt-token"
+        },
+        "400": { "success": false, "message": "Invalid email or password" },
+        "500": { "success": false, "message": "Server error" }
+      }
+    },
+    {
+      "group": "auth",
+      "method": "POST",
+      "path": "/forgot-password",
+      "authRequired": false,
+      "payload": {
+        "type": "body",
+        "schema": { "email": "string" },
+        "example": { "email": "jane@example.com" }
+      },
+      "responses": {
+        "200": {
+          "success": true,
+          "message": "Reset link Sended Successfully to jane@example.com",
+          "token": "reset-token"
+        },
+        "400": { "success": false, "message": "Email not found" },
+        "500": { "success": false, "message": "Server error" }
+      }
+    },
+    {
+      "group": "auth",
+      "method": "POST",
+      "path": "/reset-password/:token",
+      "authRequired": false,
+      "params": { "token": "string" },
+      "payload": {
+        "type": "body",
+        "schema": { "newPassword": "string", "confirmPassword": "string" },
+        "example": {
+          "newPassword": "newpass123",
+          "confirmPassword": "newpass123"
+        }
+      },
+      "responses": {
+        "200": { "success": true, "message": "Password reset successfully" },
+        "400": {
+          "success": false,
+          "message": "Invalid Token | Token is expired."
+        },
+        "500": { "success": false, "message": "Server error" }
+      }
+    },
+    {
+      "group": "auth",
+      "method": "POST",
+      "path": "/logout",
+      "authRequired": true,
+      "payload": { "type": "none" },
+      "responses": {
+        "200": { "success": true, "msg": "Logout Successfully." },
+        "400": { "success": false, "msg": "Login required" }
+      }
+    },
+
+    {
+      "group": "common",
+      "method": "GET",
+      "path": "/profile",
+      "authRequired": true,
+      "payload": { "type": "none" },
+      "responses": {
+        "200": {
+          "success": true,
+          "msg": "User profile fetched successfully.",
+          "user": {
+            "id": "string",
+            "name": "string",
+            "email": "string",
+            "addresses": []
+          }
+        },
+        "404": { "success": false, "msg": "User not found." }
+      }
+    },
+    {
+      "group": "common",
+      "method": "POST",
+      "path": "/address",
+      "authRequired": true,
+      "payload": {
+        "type": "body",
+        "schema": {
+          "street": "string",
+          "city": "string",
+          "state": "string",
+          "postalCode": "string (5-6 digits)",
+          "country": "string",
+          "landmark": "string (optional)"
+        },
+        "example": {
+          "street": "123 Main St",
+          "city": "Mumbai",
+          "state": "MH",
+          "postalCode": "400001",
+          "country": "India",
+          "landmark": "Near Mall"
+        }
+      },
+      "responses": {
+        "201": {
+          "success": true,
+          "msg": "Address created successfully.",
+          "address": { "id": "string" }
+        },
+        "400": { "success": false, "msg": "Address already exist." },
+        "500": { "success": false, "msg": "Server Error" }
+      }
+    },
+    {
+      "group": "common",
+      "method": "DELETE",
+      "path": "/address",
+      "authRequired": true,
+      "payload": { "type": "none" },
+      "responses": {
+        "200": { "success": true, "msg": "Address deleted successfully." },
+        "404": { "success": false, "msg": "Address not found." }
+      }
+    },
+
+    {
+      "group": "customer",
+      "method": "GET",
+      "path": "/providers",
+      "authRequired": false,
+      "payload": { "type": "none" },
+      "responses": {
+        "200": {
+          "success": true,
+          "msg": "Providers fetched successfully.",
+          "count": 0,
+          "providers": []
+        }
+      }
+    },
+    {
+      "group": "customer",
+      "method": "GET",
+      "path": "/providers/:providerId",
+      "authRequired": false,
+      "params": { "providerId": "string" },
+      "payload": { "type": "none" },
+      "responses": {
+        "200": {
+          "success": true,
+          "msg": "Provider fetched successfully.",
+          "provider": {}
+        },
+        "404": { "success": false, "msg": "Provider not found." }
+      }
+    },
+    {
+      "group": "customer",
+      "method": "POST",
+      "path": "/book-slot",
+      "authRequired": true,
+      "payload": {
+        "type": "body",
+        "schema": { "serviceId": "string", "slotId": "string" },
+        "example": { "serviceId": "svc_abc123", "slotId": "slot_abc123" }
+      },
+      "responses": {
+        "201": {
+          "success": true,
+          "msg": "Slot booked successfully.",
+          "newBooking": {}
+        },
+        "400": {
+          "success": false,
+          "msg": "Both serviceId and slotId are required. | Slot not found | Slot already booked"
+        },
+        "500": { "success": false, "msg": "Server error" }
+      }
+    },
+    {
+      "group": "customer",
+      "method": "GET",
+      "path": "/bookings",
+      "authRequired": true,
+      "payload": { "type": "none" },
+      "responses": {
+        "200": {
+          "success": true,
+          "msg": "Bookings fetched successfully.",
+          "count": 0,
+          "bookings": []
+        },
+        "500": { "success": false, "msg": "Could not fetch bookings." }
+      }
+    },
+    {
+      "group": "customer",
+      "method": "PATCH",
+      "path": "/bookings/:bookingId/cancel",
+      "authRequired": true,
+      "params": { "bookingId": "string" },
+      "payload": { "type": "none" },
+      "responses": {
+        "200": { "success": true, "msg": "Booking cancelled successfully." },
+        "404": { "success": false, "msg": "Booking not found or not yours." },
+        "400": { "success": false, "msg": "Cannot cancel a <status> booking." }
+      }
+    },
+
+    {
+      "group": "provider",
+      "method": "GET",
+      "path": "/business",
+      "authRequired": true,
+      "payload": { "type": "none" },
+      "responses": {
+        "200": {
+          "success": true,
+          "msg": "Business details fetched successfully.",
+          "business": {}
+        },
+        "500": { "success": false, "msg": "Server Error" }
+      }
+    },
+    {
+      "group": "provider",
+      "method": "POST",
+      "path": "/business",
+      "authRequired": true,
+      "payload": {
+        "type": "body",
+        "schema": {
+          "businessName": "string",
+          "businessCategoryId": "string",
+          "contactEmail": "string",
+          "phoneNumber": "string (10 digits)",
+          "websiteURL": "string (url, optional)",
+          "socialLinks": "array of url strings (optional)",
+          "isActive": "boolean (optional)"
+        },
+        "example": {
+          "businessName": "My Salon",
+          "businessCategoryId": "cat_123",
+          "contactEmail": "biz@example.com",
+          "phoneNumber": "9876543210"
+        }
+      },
+      "responses": {
+        "201": {
+          "success": true,
+          "msg": "Business created successfully.",
+          "business": {}
+        },
+        "400": {
+          "success": false,
+          "msg": "Business already exists! | Address not found."
+        },
+        "422": { "success": false, "msg": ["validation messages"] }
+      }
+    },
+    {
+      "group": "provider",
+      "method": "PATCH",
+      "path": "/business",
+      "authRequired": true,
+      "payload": {
+        "type": "body",
+        "schema": {
+          "businessName": "string",
+          "contactEmail": "string",
+          "phoneNumber": "string",
+          "websiteURL": "string",
+          "socialLinks": "array"
+        },
+        "example": { "businessName": "Updated Salon" }
+      },
+      "responses": {
+        "200": {
+          "success": true,
+          "msg": "Business profile updated successfully.",
+          "business": {}
+        },
+        "404": { "success": false, "msg": "Business profile not found." },
+        "422": { "success": false, "msg": ["validation messages"] }
+      }
+    },
+    {
+      "group": "provider",
+      "method": "DELETE",
+      "path": "/business",
+      "authRequired": true,
+      "payload": { "type": "none" },
+      "responses": {
+        "200": {
+          "success": true,
+          "msg": "Business profile deleted successfully."
+        },
+        "404": { "success": false, "msg": "Business profile not found." }
+      }
+    },
+
+    {
+      "group": "provider",
+      "method": "GET",
+      "path": "/business-category",
+      "authRequired": false,
+      "payload": { "type": "none" },
+      "responses": {
+        "200": {
+          "success": true,
+          "msg": "Business Category fetched successfully.",
+          "count": 0,
+          "businessCategory": []
+        }
+      }
+    },
+    {
+      "group": "provider",
+      "method": "POST",
+      "path": "/business-category",
+      "authRequired": true,
+      "payload": {
+        "type": "body",
+        "schema": { "name": "string" },
+        "example": { "name": "Beauty" }
+      },
+      "responses": {
+        "201": {
+          "success": true,
+          "msg": "Business category created successfully.",
+          "category": {}
+        },
+        "200": {
+          "success": false,
+          "msg": "We found similar business categories.",
+          "suggestions": ["beauty"]
+        }
+      }
+    },
+
+    {
+      "group": "provider",
+      "method": "GET",
+      "path": "/service",
+      "authRequired": true,
+      "payload": { "type": "none" },
+      "responses": {
+        "200": {
+          "success": true,
+          "msg": "Services fetched successfully.",
+          "count": 0,
+          "services": []
+        },
+        "404": { "success": false, "msg": "Business profile not found." }
+      }
+    },
+    {
+      "group": "provider",
+      "method": "POST",
+      "path": "/service",
+      "authRequired": true,
+      "payload": {
+        "type": "body",
+        "schema": {
+          "name": "string",
+          "description": "string",
+          "durationInMinutes": "number",
+          "price": "number",
+          "currency": "string (INR|USD|EUR)",
+          "isActive": "boolean"
+        },
+        "example": {
+          "name": "Haircut",
+          "description": "Basic haircut",
+          "durationInMinutes": 30,
+          "price": 300
+        }
+      },
+      "responses": {
+        "201": {
+          "success": true,
+          "msg": "Service created successfully.",
+          "service": {}
+        },
+        "400": {
+          "success": false,
+          "msg": "A service with this name already exists under your business."
+        },
+        "507": {
+          "success": false,
+          "msg": "You have reached the maximum limit of 5 services."
+        }
+      }
+    },
+    {
+      "group": "provider",
+      "method": "PATCH",
+      "path": "/service/:serviceId",
+      "authRequired": true,
+      "params": { "serviceId": "string" },
+      "payload": {
+        "type": "body",
+        "schema": {
+          "name": "string",
+          "description": "string",
+          "durationInMinutes": "number",
+          "price": "number"
+        },
+        "example": { "price": 350 }
+      },
+      "responses": {
+        "200": {
+          "success": true,
+          "msg": "Service updated successfully.",
+          "service": {}
+        },
+        "404": {
+          "success": false,
+          "msg": "Service not found or does not belong to your business."
+        }
+      }
+    },
+    {
+      "group": "provider",
+      "method": "DELETE",
+      "path": "/service/:serviceId",
+      "authRequired": true,
+      "params": { "serviceId": "string" },
+      "payload": { "type": "none" },
+      "responses": {
+        "200": { "success": true, "msg": "Service deleted successfully." },
+        "404": {
+          "success": false,
+          "msg": "Service not found or does not belong to your business."
+        }
+      }
+    },
+
+    {
+      "group": "provider",
+      "method": "GET",
+      "path": "/slot/:serviceId",
+      "authRequired": true,
+      "params": { "serviceId": "string" },
+      "payload": { "type": "none" },
+      "responses": {
+        "200": {
+          "success": true,
+          "msg": "Slots fetched successfully.",
+          "count": 0,
+          "slots": []
+        },
+        "404": {
+          "success": false,
+          "msg": "Service not found or does not belong to your business."
+        }
+      }
+    },
+    {
+      "group": "provider",
+      "method": "POST",
+      "path": "/slot",
+      "authRequired": true,
+      "payload": {
+        "type": "body",
+        "schema": {
+          "serviceId": "string",
+          "date": "ISO date",
+          "startTime": "HH:MM (24h)",
+          "endTime": "HH:MM (24h)"
+        },
+        "example": {
+          "serviceId": "svc_abc",
+          "date": "2025-12-01",
+          "startTime": "10:00",
+          "endTime": "11:00"
+        }
+      },
+      "responses": {
+        "201": {
+          "success": true,
+          "msg": "Slot created successfully.",
+          "slot": {}
+        },
+        "400": { "success": false, "msg": "Time overlap or date in past" },
+        "404": {
+          "success": false,
+          "msg": "Business profile not found | Service not found"
+        }
+      }
+    },
+    {
+      "group": "provider",
+      "method": "DELETE",
+      "path": "/slot/:slotId",
+      "authRequired": true,
+      "params": { "slotId": "string" },
+      "payload": { "type": "none" },
+      "responses": {
+        "200": { "success": true, "msg": "Slot deleted successfully." },
+        "404": {
+          "success": false,
+          "msg": "Slot not found or does not belong to your business."
+        }
+      }
+    },
+
+    {
+      "group": "provider",
+      "method": "GET",
+      "path": "/booking",
+      "authRequired": true,
+      "payload": { "type": "none" },
+      "responses": {
+        "200": {
+          "success": true,
+          "msg": "Bookings fetched successfully.",
+          "count": 0,
+          "bookings": []
+        },
+        "404": {
+          "success": false,
+          "msg": "Business profile not found for this user."
+        }
+      }
+    },
+    {
+      "group": "provider",
+      "method": "PATCH",
+      "path": "/booking/:bookingId",
+      "authRequired": true,
+      "params": { "bookingId": "string" },
+      "payload": {
+        "type": "body",
+        "schema": {
+          "status": "string (see allowed values)",
+          "reason": "string (optional)"
+        },
+        "example": { "status": "Confirmed" }
+      },
+      "responses": {
+        "200": {
+          "success": true,
+          "msg": "Booking status updated successfully.",
+          "updatedBooking": {}
+        },
+        "400": { "success": false, "msg": "Status is required." },
+        "404": { "success": false, "msg": "Booking not found." }
+      }
+    }
+  ]
+}
