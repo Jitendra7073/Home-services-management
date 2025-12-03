@@ -40,7 +40,7 @@ const forgotPasswordTamplate = (name, token) => {
               Click the button below to proceed:
             </p>
 
-            <a href="http://localhost:5000/auth/reset-password/${token}"
+            <a href="http://localhost:3000/auth/reset-password/${token}"
               style="display:inline-block; margin:20px 0; background:#007bff; color:#fff; padding:12px 20px; text-decoration:none; border-radius:5px;">
               Reset Password
             </a>
