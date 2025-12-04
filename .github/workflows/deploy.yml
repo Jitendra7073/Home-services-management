@@ -1,0 +1,76 @@
+name: CI-CD Backend Deployment
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/home-services-backend:latest
+
+    steps:
+      # -------------------------
+      # 1. Checkout source code
+      # -------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # -------------------------
+      # 2. Login to Docker Hub
+      # -------------------------
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # -------------------------
+      # 3. Build & Push image
+      # -------------------------
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/home-services-backend:latest
+
+      # -------------------------
+      # 4. Deploy to VPS via SSH (SSH key in proper format incliuding Headers- lines- footers)
+      # -------------------------
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          script: |
+            set -e
+
+            IMAGE=${{ secrets.DOCKER_USERNAME }}/home-services-backend:latest
+
+            echo "Pulling latest backend image..."
+            docker pull -q $IMAGE
+
+            echo "Stopping previous container..."
+            docker stop home-services-backend || true
+
+            echo "Removing old container..."
+            docker rm home-services-backend || true
+
+            echo "Starting new container..."
+            docker run -d \
+              --name home-services-backend \
+              -p 5000:5000 \
+              --restart always \
+              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+              -e JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
+              -e SENDER_EMAIL="${{ secrets.SENDER_EMAIL }}" \
+              -e SENDER_EMAIL_PASSWORD="${{ secrets.SENDER_EMAIL_PASSWORD }}" \
+              -e NODE_ENV=production \
+              $IMAGE
+
+            echo "Deployment complete."
