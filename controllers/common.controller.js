@@ -3,6 +3,7 @@ const prisma = require("../prismaClient");
 const {
   AddressValidation,
 } = require("../helper/validation/address.validation");
+const { verifyToken } = require("../helper/jwtToken");
 
 // ==================================== USER PROFILE ====================================
 const getUserProfile = async (req, res) => {
@@ -113,8 +114,36 @@ const deleteAddress = async (req, res) => {
   }
 };
 
+const getMe = async (req, res) => {
+  const token = req.params.token;
+  const user = verifyToken(token);
+  if (!token || !user) {
+    return res.status(400).json({ success: false, message: "Invalid Token" });
+  }
+  const userId = user.id;
+
+  try {
+    const userData = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        mobile: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+    return res.status(200).json({ success: true, user: userData });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 module.exports = {
   getUserProfile,
   addAddress,
   deleteAddress,
+  getMe,
 };

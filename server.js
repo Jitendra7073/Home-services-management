@@ -21,18 +21,20 @@ const port = process.env.PORT || 5000;
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:3000",
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    credentials: true,
+  })
+);
 
 // Connect database
 ConnectDB();
 
 // Routes
 app.use("/auth", AuthRoutes);
-app.use(checkAuthToken());
 app.use("/api/v1", CommonRoute);
+app.use(checkAuthToken());
 app.use("/api/v1/customer", RoleBasedAccess("customer"), CustomerRoute);
 app.use("/api/v1/provider", RoleBasedAccess("provider"), ProviderRoute);
 

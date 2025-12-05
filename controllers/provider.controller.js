@@ -205,21 +205,40 @@ const deleteBusiness = async (req, res) => {
 // ==================================== BUSINESS CATEGORY ====================================
 const getAllBusinessCategory = async (req, res) => {
   const businessCategory = await prisma.Businesscategory.findMany();
+  const businesses = await prisma.BusinessProfile.findMany();
+
+  const categoriesWithCounts = businessCategory.map((category) => {
+    const count = businesses.filter(
+      (biz) => biz.businessCategoryId === category.id
+    ).length;
+
+    return {
+      ...category,
+      providersCount: count,
+    };
+  });
+
   return res.status(200).json({
     success: true,
     msg: "Business Category fetched successfully.",
-    count: businessCategory.length,
-    businessCategory,
+    count: categoriesWithCounts.length,
+    categories: categoriesWithCounts,
   });
 };
 
 const createBusinessCategory = async (req, res) => {
-  const { name } = req.body;
+  const { name, description } = req.body;
 
   if (!name.trim() || name === "" || name.length < 3) {
     return res.status(400).json({
       success: false,
       msg: "Name is required and must be at least 3 characters long.",
+    });
+  }
+  if (!description.trim() || description === "" || description.length < 10) {
+    return res.status(400).json({
+      success: false,
+      msg: "Description is required and must be at least 10 characters long.",
     });
   }
 
@@ -254,7 +273,7 @@ const createBusinessCategory = async (req, res) => {
     }
 
     const newCategory = await prisma.Businesscategory.create({
-      data: { name: name.toLowerCase(), createdBy: req.user.id },
+      data: { name: name.toLowerCase(), description, createdBy: req.user.id },
     });
 
     return res.status(201).json({

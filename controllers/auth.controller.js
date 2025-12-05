@@ -7,7 +7,7 @@ const {
   ForgotPasswordSchema,
   ResetPasswordSchema,
 } = require("../helper/validation/auth.validation");
-const { assignToken } = require("../helper/jwtToken");
+const { assignToken, verifyToken } = require("../helper/jwtToken");
 const { sendMail } = require("../utils/sendmail");
 
 // Mail tamplates
@@ -82,15 +82,19 @@ const login = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 60 * 60 * 1000,
+      // secure: true,
+      secure: process.env.NODE_ENV === "development",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 60 * 1000,
+      path: "/",
     });
 
-    // sendMail();
-    res
-      .status(200)
-      .json({ success: true, message: "Login Successfully", token });
+    res.status(200).json({
+      success: true,
+      message: "Login Successfully",
+      role: user.role,
+      token,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error" });
   }

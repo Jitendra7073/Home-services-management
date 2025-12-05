@@ -3,14 +3,24 @@ const route = express.Router();
 
 // controller
 const commonRoutes = require("../controllers/common.controller");
+const { checkAuthToken } = require("../middleware/checkTOken");
+
+// CONTROLLER
+const ProviderController = require("../controllers/provider.controller");
 
 // Profile Route
-route.get("/profile", commonRoutes.getUserProfile);
+route.get("/profile", checkAuthToken(), commonRoutes.getUserProfile);
 
 // Address Routes
 route
   .route("/address")
-  .post(commonRoutes.addAddress)
-  .delete(commonRoutes.deleteAddress);
+  .post(checkAuthToken(), commonRoutes.addAddress)
+  .delete(checkAuthToken(), commonRoutes.deleteAddress);
+
+route.get("/me/:token", commonRoutes.getMe);
+
+route
+  .route("/business-category")
+  .get(ProviderController.getAllBusinessCategory);
 
 module.exports = route;

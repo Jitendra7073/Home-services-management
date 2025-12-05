@@ -13,4 +13,6 @@ route.post("/book-slot", CustomerController.bookSlot);
 route.get("/bookings", CustomerController.getCustomerBookings);
 route.patch("/bookings/:bookingId/cancel", CustomerController.cancelBooking);
 
+route.get("/all-services", CustomerController.getAllServices);
+
 module.exports = route;

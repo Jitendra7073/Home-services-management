@@ -35,7 +35,6 @@ const getAllProviders = async (req, res) => {
                     endTime: true,
                     isBooked: true,
                   },
-                  // where: { isBooked: false },
                 },
               },
             },
@@ -82,13 +81,22 @@ const getProviderById = async (req, res) => {
           select: {
             id: true,
             businessName: true,
+            contactEmail: true,
+            phoneNumber: true,
+            websiteURL: true,
+            isActive: true,
+            socialLinks: true,
             services: {
               select: {
                 id: true,
                 name: true,
                 category: true,
                 durationInMinutes: true,
+                currency: true,
                 price: true,
+                averageRating: true,
+                reviewCount: true,
+                isActive: true,
                 slots: {
                   select: {
                     id: true,
@@ -97,7 +105,6 @@ const getProviderById = async (req, res) => {
                     endTime: true,
                     isBooked: true,
                   },
-                  where: { isBooked: false },
                 },
               },
             },
@@ -297,10 +304,28 @@ const cancelBooking = async (req, res) => {
   }
 };
 
+const getAllServices = async (req, res) => {
+  try {
+    const services = await prisma.service.findMany();
+    return res.status(200).json({
+      success: true,
+      msg: "Services fetched successfully.",
+      count: services.length,
+      services,
+    });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ success: false, msg: "Could not fetch services." });
+  }
+};
+
 module.exports = {
   getAllProviders,
   getProviderById,
   bookSlot,
   getCustomerBookings,
   cancelBooking,
+  getAllServices,
 };

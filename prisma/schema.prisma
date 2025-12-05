@@ -104,6 +104,7 @@ model BusinessProfile {
 model Businesscategory {
   id   String @id @default(uuid())
   name String
+  description String
 
   // User Relation
   createdBy String @default("admin")
