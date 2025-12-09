@@ -58,7 +58,6 @@ const createBusiness = async (req, res) => {
       });
     }
 
-    console.log("Business Type Id", value.businessCategoryId);
     const businessCategory = await prisma.Businesscategory.findUnique({
       where: { id: value.businessCategoryId },
     });
@@ -85,7 +84,7 @@ const createBusiness = async (req, res) => {
       business: newBusiness,
     });
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return res.status(500).json({
       success: false,
       msg: "Server Error: Could not create business.",
@@ -614,7 +613,6 @@ const createSlot = async (req, res) => {
     // Verify that the service exists and belongs to this business
     const service = await prisma.Service.findFirst({
       where: {
-        id: value.serviceId,
         businessProfileId: business.id,
       },
     });
@@ -626,56 +624,36 @@ const createSlot = async (req, res) => {
       });
     }
 
-    // date must be greater or equal to today
-    const userSelectedDate = new Date(`${value.date}`)
-      .toISOString()
-      .split("T")[0];
-    const currentDate = new Date().toISOString().split("T")[0];
-
-    if (userSelectedDate < currentDate) {
-      return res.status(400).json({
-        success: false,
-        msg: "Booking Date must be Today or later, not in the past",
-      });
-    }
-
-    // Find all existing slots for this service on the same date
+    // Find all existing slots for this business
     const existingSlots = await prisma.Slot.findMany({
       where: {
-        serviceId: value.serviceId,
-        date: new Date(value.date),
+        businessProfileId: business.id,
       },
     });
 
-    const userStartTime = value.startTime;
-    const userEndTime = value.endTime;
+    function normalizeTime(timeString) {
+      return timeString.trim().toUpperCase();
+    }
+
+    const selectedTime = normalizeTime(value.time);
 
     const slotTimeConflict = existingSlots.some((slot) => {
-      const savedStartTime = slot.startTime;
-      const savedEndTime = slot.endTime;
+      const savedTime = normalizeTime(slot.time);
 
-      return (
-        (userStartTime < savedEndTime && userEndTime > savedStartTime) ||
-        userStartTime === savedStartTime ||
-        userEndTime === savedEndTime ||
-        (userStartTime > savedStartTime && userEndTime < savedEndTime)
-      );
+      return savedTime === selectedTime;
     });
 
     if (slotTimeConflict) {
       return res.status(400).json({
         success: false,
-        msg: "This time slot overlaps with an existing slot for the same service.",
+        msg: "This time slot already exists.",
       });
     }
 
     // Create slot
     const newSlot = await prisma.Slot.create({
       data: {
-        date: new Date(value.date),
-        startTime: value.startTime,
-        endTime: value.endTime,
-        serviceId: service.id,
+        time: value.time,
         businessProfileId: business.id,
       },
     });

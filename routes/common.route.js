@@ -10,17 +10,18 @@ const ProviderController = require("../controllers/provider.controller");
 
 // Profile Route
 route.get("/profile", checkAuthToken(), commonRoutes.getUserProfile);
+route.get("/me/:token", commonRoutes.getMe);
 
 // Address Routes
 route
   .route("/address")
+  .get(checkAuthToken(), commonRoutes.getAddress)
   .post(checkAuthToken(), commonRoutes.addAddress)
   .delete(checkAuthToken(), commonRoutes.deleteAddress);
 
-route.get("/me/:token", commonRoutes.getMe);
-
+// Business Category Routes
 route
   .route("/business-category")
-  .get(ProviderController.getAllBusinessCategory);
+  .get(checkAuthToken(), ProviderController.getAllBusinessCategory);
 
 module.exports = route;

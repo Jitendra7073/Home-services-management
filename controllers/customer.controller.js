@@ -27,15 +27,6 @@ const getAllProviders = async (req, res) => {
                 durationInMinutes: true,
                 price: true,
                 isActive: true,
-                slots: {
-                  select: {
-                    id: true,
-                    date: true,
-                    startTime: true,
-                    endTime: true,
-                    isBooked: true,
-                  },
-                },
               },
             },
           },
@@ -97,15 +88,12 @@ const getProviderById = async (req, res) => {
                 averageRating: true,
                 reviewCount: true,
                 isActive: true,
-                slots: {
-                  select: {
-                    id: true,
-                    date: true,
-                    startTime: true,
-                    endTime: true,
-                    isBooked: true,
-                  },
-                },
+              },
+            },
+            slots: {
+              select: {
+                id: true,
+                time: true,
               },
             },
           },
@@ -221,38 +209,54 @@ const getCustomerBookings = async (req, res) => {
   const customerId = req.user.id;
 
   try {
-    const bookings = await prisma.Booking.findMany({
+    const bookings = await prisma.booking.findMany({
       where: { userId: customerId },
+
       include: {
-        slot: {
-          include: {
-            service: true,
-            businessProfile: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    mobile: true,
-                    role: true,
-                    createdAt: true,
-                  },
-                },
+        service: {
+          select: {
+            name: true,
+          },
+        },
+        businessProfile: {
+          select: {
+            businessName: true,
+            user: {
+              select: {
+                email: true,
+                mobile: true,
               },
             },
           },
         },
-        service: true,
+        slot: {
+          select: {
+            time: true,
+          },
+        },
+        address: true,
       },
+
       orderBy: { createdAt: "desc" },
     });
+
+    // Format business fields cleanly
+    const formatted = bookings.map((b) => ({
+      ...b,
+      business: {
+        id: b.businessProfile?.id,
+        name: b.businessProfile?.name,
+        email: b.businessProfile?.user?.email,
+        phone: b.businessProfile?.user?.mobile,
+      },
+      businessProfile: undefined, // remove duplicate
+    }));
 
     return res.status(200).json({
       success: true,
       msg: "Bookings fetched successfully.",
-      count: bookings.length,
-      bookings,
+      count: formatted.length,
+      bookings: formatted,
     });
   } catch (err) {
     console.error(err);
@@ -321,6 +325,189 @@ const getAllServices = async (req, res) => {
   }
 };
 
+const getCart = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const cart = await prisma.Cart.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        date: true,
+        business: {
+          select: {
+            id: true,
+            businessName: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        service: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        },
+        slot: {
+          select: {
+            id: true,
+            time: true,
+          },
+        },
+      },
+    });
+
+    if (cart.length === 0) {
+      return res.status(200).json({
+        success: true,
+        msg: "Cart is empty.",
+        totalItems: 0,
+        totalPrice: 0,
+      });
+    }
+
+    const totalItems = cart.length;
+    const totalPrice = cart.reduce((sum, item) => sum + item.service.price, 0);
+
+    return res.status(200).json({
+      success: true,
+      msg: "Cart fetched successfully.",
+      totalItems,
+      totalPrice,
+      cart,
+    });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ success: false, msg: "Could not fetch cart." });
+  }
+};
+
+const addToCart = async (req, res) => {
+  const userId = req.user.id;
+  const { serviceId, businessId, slotId, date } = req.body;
+
+  try {
+    // ==== Check if business exists ====
+    const business = await prisma.BusinessProfile.findUnique({
+      where: { id: businessId },
+    });
+    if (!business) {
+      return res.status(404).json({
+        success: false,
+        msg: "Business does not exist.",
+      });
+    }
+
+    // ==== Check if service exists ====
+    const service = await prisma.Service.findUnique({
+      where: { id: serviceId },
+    });
+    if (!service) {
+      return res.status(404).json({
+        success: false,
+        msg: "Service not found.",
+      });
+    }
+
+    // ==== Check if slot exists ====
+    const slot = await prisma.Slot.findUnique({ where: { id: slotId } });
+    if (!slot) {
+      return res.status(404).json({
+        success: false,
+        msg: "Slot does not exist.",
+      });
+    }
+
+    const isoDate = new Date(date).toISOString();
+
+    // ==== Prevent duplicate cart entries ====
+    const existing = await prisma.Cart.findFirst({
+      where: {
+        userId,
+        serviceId,
+        slotId,
+        date: isoDate,
+      },
+    });
+
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        msg: "This service & slot is already in your cart.",
+      });
+    }
+
+    // ==== Add to cart ====
+    const added = await prisma.Cart.create({
+      data: {
+        userId,
+        serviceId,
+        businessId,
+        slotId,
+        date: isoDate,
+      },
+    });
+
+    return res.status(201).json({
+      success: true,
+      msg: "Service added to cart successfully.",
+      cart: added,
+    });
+  } catch (err) {
+    console.error("ADD TO CART ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      msg: "Internal server error while adding to cart.",
+    });
+  }
+};
+
+const removeItemFromCart = async (req, res) => {
+  try {
+    const { cartId } = req.body;
+
+    if (!cartId) {
+      return res.status(400).json({
+        success: false,
+        msg: "cartId is required.",
+      });
+    }
+
+    const cartItem = await prisma.Cart.findUnique({
+      where: { id: cartId },
+    });
+
+    if (!cartItem) {
+      return res.status(404).json({
+        success: false,
+        msg: "Item not found in cart.",
+      });
+    }
+
+    await prisma.Cart.delete({
+      where: { id: cartId },
+    });
+
+    return res.status(200).json({
+      success: true,
+      msg: "Item removed from your cart.",
+    });
+  } catch (error) {
+    console.error("Remove cart error:", error);
+    return res.status(500).json({
+      success: false,
+      msg: "Server Error: Could not remove item from cart",
+    });
+  }
+};
+
 module.exports = {
   getAllProviders,
   getProviderById,
@@ -328,4 +515,7 @@ module.exports = {
   getCustomerBookings,
   cancelBooking,
   getAllServices,
+  getCart,
+  addToCart,
+  removeItemFromCart,
 };

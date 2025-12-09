@@ -13,6 +13,13 @@ route.post("/book-slot", CustomerController.bookSlot);
 route.get("/bookings", CustomerController.getCustomerBookings);
 route.patch("/bookings/:bookingId/cancel", CustomerController.cancelBooking);
 
+// Add to cart
+route
+  .route("/cart")
+  .get(CustomerController.getCart)
+  .post(CustomerController.addToCart)
+  .delete(CustomerController.removeItemFromCart);
+
 route.get("/all-services", CustomerController.getAllServices);
 
 module.exports = route;

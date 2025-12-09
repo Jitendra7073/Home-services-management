@@ -52,9 +52,10 @@ model User {
   addresses        Address[]
   businessProfile  BusinessProfile?
   bookings         Booking[]
-  slotsBooked      Slot[]             @relation("SlotBooking")
   feedbacks        Feedback[]
   Businesscategory Businesscategory[]
+  carts            Cart[]
+  CustomerPayment  CustomerPayment[]
 
   @@index([email])
 }
@@ -94,6 +95,7 @@ model BusinessProfile {
   // Relations
   services Service[]
   slots    Slot[]
+  carts    Cart[]
   Booking  Booking[]
 
   @@index([businessName, contactEmail])
@@ -102,8 +104,8 @@ model BusinessProfile {
 // BUSINESS CATEGORY
 
 model Businesscategory {
-  id   String @id @default(uuid())
-  name String
+  id          String @id @default(uuid())
+  name        String
   description String
 
   // User Relation
@@ -128,8 +130,10 @@ model Address {
   country    String
   landmark   String @default("N/A")
 
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String            @unique
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Booking         Booking[]
+  CustomerPayment CustomerPayment[]
 }
 
 // SERVICE
@@ -165,38 +169,100 @@ model Service {
   businessCategoryId String
   category           Businesscategory @relation(fields: [businessCategoryId], references: [id])
 
-  slots    Slot[]
-  bookings Booking[]
+  carts       Cart[]
+  bookings    Booking[]
+  BookingItem BookingItem[]
 }
 
 // SLOT
 
 model Slot {
-  id        String   @id @default(uuid())
-  date      DateTime
-  startTime String
-  endTime   String
-  isBooked  Boolean  @default(false)
-
-  // Relation to Service
-  serviceId String
-  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  id   String @id @default(uuid())
+  time String
 
   // Relation to Business Profile
   businessProfileId String?
   businessProfile   BusinessProfile? @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
 
-  // Relation to User 
-  bookedById String?
-  bookedBy   User?   @relation("SlotBooking", fields: [bookedById], references: [id], onDelete: Cascade)
-
   // Relation to bookings
   bookings Booking[]
+  bookingItem BookingItem[]
+  carts    Cart[]
 }
 
 // BOOKING
 
 model Booking {
+  id                String   @id @default(uuid())
+  userId            String
+  addressId         String
+  serviceId         String
+  businessProfileId String
+  slotId            String?
+  totalAmount       Int
+  paymentStatus     PaymentStatus @default(PENDING)
+  bookingStatus     BookingStatus @default(PENDING)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address           Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  service           Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id])
+  slot              Slot? @relation(fields: [slotId], references: [id])
+
+  bookingItems      BookingItem[]
+  feedbacks         Feedback[]
+}
+
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+
+// Booking Items
+model BookingItem {
+  id        String  @id @default(uuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  slotId String
+  slot   Slot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  price Float
+}
+
+model CustomerPayment {
+  id          String   @id @default(uuid())
+  userId      String
+  addressId   String
+  amount      Int
+  status      PaymentStatus @default(PENDING)
+  bookingIds  String 
+  stripeSessionId String? 
+  paymentIntentId  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address     Address  @relation(fields: [addressId], references: [id])
+}
+
+
+// CART
+model Cart {
   id String @id @default(uuid())
 
   userId String
@@ -205,17 +271,17 @@ model Booking {
   serviceId String
   service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
-  businessProfileId String
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  businessId String
+  business   BusinessProfile @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  slotId String?
-  slot   Slot?   @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  slotId String
+  slot   Slot   @relation(fields: [slotId], references: [id], onDelete: Cascade)
 
-  status    ServiceStatus @default(Pending)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  date String
 
-  feedback Feedback?
+  addedAt DateTime @default(now())
+
+  @@unique([userId, serviceId])
 }
 
 // FEEDBACK

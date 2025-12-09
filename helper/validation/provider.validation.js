@@ -26,13 +26,8 @@ const serviceProfileSchema = Joi.object({
 });
 
 const slotProfileSchema = Joi.object({
-  serviceId: Joi.string().required(),
-  date: Joi.date().required(),
-  startTime: Joi.string()
-    .pattern(/^([0-1]\d|2[0-3]):([0-5]\d)$/)
-    .required(),
-  endTime: Joi.string()
-    .pattern(/^([0-1]\d|2[0-3]):([0-5]\d)$/)
+  time: Joi.string()
+    .pattern(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM|am|pm)$/)
     .required(),
 });
 

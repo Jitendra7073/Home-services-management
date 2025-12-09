@@ -23,7 +23,8 @@
     "lemmatizer": "^0.0.1",
     "nodemailer": "^7.0.10",
     "pg": "^8.16.3",
-    "resend": "^6.5.2"
+    "resend": "^6.5.2",
+    "stripe": "^20.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10",
