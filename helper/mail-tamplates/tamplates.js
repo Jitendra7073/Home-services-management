@@ -1,29 +1,57 @@
-const welcomeUserTamplate = (name) => {
+// Welcome User Email Template
+function welcomeUserTamplate(userName) {
   return `
-<table width="100%" cellpadding="0" cellspacing="0" style="font-family: Arial, sans-serif; background:#f7f7f7; padding:20px;">
-  <tr>
-    <td>
-      <table cellpadding="0" cellspacing="0" width="600" align="center" style="background:#ffffff; border-radius:8px; padding:30px;">
-        <tr>
-          <td>
-            <h2 style="color:#333; margin-bottom:10px;">Welcome, ${name} 👋</h2>
-            <p style="font-size:16px; color:#555;">
-              Thank you for registering with <strong>Home Service Management</strong>.  
-              We're excited to have you on board!
-            </p>
 
-            <p style="margin-top:30px; font-size:14px; color:#777;">
-              Best Regards,<br/>
-              <strong>Home Service Management Team</strong>
-            </p>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
+          <table role="presentation" class="container" style="width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); border-collapse: collapse; overflow: hidden;">
+            
+            <!-- Header -->
+            <tr>
+              <td class="header" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 28px 24px; text-align: center; color: #ffffff; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">
+                Welcome Aboard!
+              </td>
+            </tr>
+            
+            <!-- Content -->
+            <tr>
+              <td class="content" style="padding: 32px 28px;">
+                
+                <!-- Greeting -->
+                <p style="margin: 0 0 8px 0; font-size: 16px; color: #2c3e50; font-weight: 600;">
+                  Hi ${userName},
+                </p>
+                <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #546e7a;">
+                  Thank you for joining us! We're thrilled to have you on board. Your account is now active and ready to use.
+                </p>
+
+                <!-- Additional Info -->
+                <p style="margin-top: 28px; font-size: 13px; line-height: 1.6; color: #546e7a;">
+                  If you have any questions or need help getting started, our support team is always available to assist you.
+                </p>
+
+                <!-- Footer -->
+                <p class="footer-text" style="margin-top: 28px; font-size: 12px; color: #90a4ae; text-align: center; line-height: 1.6;">
+                  <a href="mailto:support@example.com" style="color: #2a5298; text-decoration: none; font-weight: 600;">Contact Support</a> • 
+                  <a href="#" style="color: #2a5298; text-decoration: none; font-weight: 600;">Help Center</a>
+                </p>
+              </td>
+            </tr>
+            
+            <!-- Footer Divider -->
+            <tr>
+              <td style="height: 1px; background-color: #eceff1;"></td>
+            </tr>
+            
+            <!-- Branding Footer -->
+            <tr>
+              <td style="padding: 16px 28px; text-align: center; background-color: #fafbfc;">
+                <p style="margin: 0; font-size: 12px; color: #90a4ae;">
+                  © 2024 HSM. All rights reserved.
+                </p>
+              </td>
+            </tr>
+          </table>
   `;
-};
+}
 
 const forgotPasswordTamplate = (name, token) => {
   return `
@@ -62,142 +90,236 @@ const forgotPasswordTamplate = (name, token) => {
   `;
 };
 
-const slotBookingRequestTemplate = (name, service, date, startTime, endTime) => {
+function bookingSuccessEmailTemplate({
+  userName,
+  bookingIds,
+  totalAmount,
+  paymentId,
+  paymentDate,
+  customerPortalUrl,
+  services,
+  businessName,
+}) {
   return `
-<table width="100%" cellpadding="0" cellspacing="0" style="font-family: Arial, sans-serif; background:#f7f7f7; padding:20px;">
-  <tr>
-    <td>
-      <table cellpadding="0" cellspacing="0" width="600" align="center" style="background:#ffffff; border-radius:8px; padding:30px;">
-        <tr>
-          <td>
-            <h2 style="color:#333;">Dear ${name},</h2>
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmed</title>
+    <style type="text/css">
+      @media only screen and (max-width: 600px) {
+        .container { width: 100% !important; }
+        .header { padding: 16px !important; font-size: 20px !important; }
+        .content { padding: 18px !important; }
+        .cta-button { width: 100% !important; padding: 14px !important; box-sizing: border-box !important; }
+        .footer-text { font-size: 11px !important; }
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5;">
+    
+    <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f0f2f5;">
+      <tr>
+        <td style="padding: 30px 16px;">
+          
+          <!-- Main Container -->
+          <table role="presentation" class="container" style="width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); border-collapse: collapse; overflow: hidden;">
+            
+            <!-- Header -->
+            <tr>
+              <td class="header" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 28px 24px; text-align: center; color: #ffffff; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">
+                ✓ Booking Confirmed
+              </td>
+            </tr>
+            
+            <!-- Content -->
+            <tr>
+              <td class="content" style="padding: 32px 28px;">
+                
+                <!-- Greeting -->
+                <p style="margin: 0 0 8px 0; font-size: 16px; color: #2c3e50; font-weight: 600;">
+                  Hi ${userName},
+                </p>
+                <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #546e7a;">
+                  Your booking has been successfully confirmed! We've received your payment and your appointment is all set.
+                </p>
 
-            <p style="font-size:16px; color:#555;">
-              Your booking request for the service 
-              <strong>${service}</strong> has been submitted.
-            </p>
+                <!-- Quick Summary -->
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 24px 0;">
+                  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                      <td style="padding: 8px 0; font-size: 13px; color: #90a4ae;">Booking Reference</td>
+                      <td style="text-align: right; padding: 8px 0; font-size: 15px; font-weight: 600; color: #2c3e50; font-family: 'Courier New', monospace;">${bookingIds[0]}</td>
+                    </tr>
+                    <tr style="border-top: 1px solid #e0e0e0;">
+                      <td style="padding: 12px 0; font-size: 13px; color: #90a4ae;">Total Amount</td>
+                      <td style="text-align: right; padding: 12px 0; font-size: 18px; font-weight: 700; color: #1e3c72;">₹${totalAmount}</td>
+                    </tr>
+                  </table>
+                </div>
 
-            <p style="font-size:15px; color:#444;">
-              We have notified the provider. You will receive another update once they confirm.
-            </p>
+                <!-- Information Text -->
+                <p style="margin: 24px 0; font-size: 14px; line-height: 1.6; color: #546e7a;">
+                  A detailed invoice and booking confirmation have been attached to this email. Please keep them safe for your records.
+                </p>
 
-            <table cellpadding="0" cellspacing="0" style="margin-top:20px;">
-              <tr><td style="padding:5px 0;"><strong>Date:</strong> ${date}</td></tr>
-              <tr><td style="padding:5px 0;"><strong>Time:</strong> ${startTime} - ${endTime}</td></tr>
-            </table>
-
-            <p style="margin-top:30px; font-size:14px; color:#777;">
-              Best Regards,<br/>
-              <strong>Home Service Management Team</strong>
-            </p>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
+                <!-- Support Text -->
+                <p class="footer-text" style="margin-top: 32px; font-size: 12px; color: #90a4ae; text-align: center; line-height: 1.6;">
+                  Need assistance? Our support team is here to help.<br/>
+                  <a href="mailto:support@example.com" style="color: #2a5298; text-decoration: none; font-weight: 600;">Contact Support</a>
+                </p>
+              </td>
+            </tr>
+            
+            <!-- Footer Divider -->
+            <tr>
+              <td style="height: 1px; background-color: #eceff1;"></td>
+            </tr>
+            
+            <!-- Branding Footer -->
+            <tr>
+              <td style="padding: 16px 28px; text-align: center; background-color: #fafbfc;">
+                <p style="margin: 0; font-size: 12px; color: #90a4ae;">
+                  © 2024 ${businessName}. All rights reserved.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+  </html>
   `;
-};
-
-const slotBookingStatusTemplate = (name, service, date, startTime, endTime, status) => {
-
-  // Status-specific messages
-  const statusMessages = {
-    Confirmed: {
-      title: "Booking Confirmed 🎉",
-      message: "Great news! Your booking has been confirmed by the provider.",
-      color: "#4CAF50"
-    },
-    Inprogress: {
-      title: "Service In Progress",
-      message: "Your service provider has started working on your booking.",
-      color: "#2196F3"
-    },
-    OnHold: {
-      title: "Booking On Hold",
-      message: "Your booking is currently on hold. We will notify you when it resumes.",
-      color: "#FFC107"
-    },
-    Completed: {
-      title: "Service Completed ✔",
-      message: "Your service has been successfully completed. Thank you for choosing us!",
-      color: "#4CAF50"
-    },
-    Cancelled: {
-      title: "Booking Cancelled",
-      message: "Your booking has been cancelled. If this was a mistake, please contact support.",
-      color: "#F44336"
-    },
-    Rejected: {
-      title: "Booking Rejected",
-      message: "Unfortunately, your booking request was rejected by the provider.",
-      color: "#E53935"
-    },
-    Failed: {
-      title: "Service Failed",
-      message: "We encountered an issue while processing your service. Please reach out to support.",
-      color: "#D32F2F"
-    },
-    Refunded: {
-      title: "Refund Processed 💰",
-      message: "Your payment has been refunded successfully. It may take 3–5 days to reflect.",
-      color: "#009688"
-    },
-    Closed: {
-      title: "Booking Closed",
-      message: "This booking has been closed. Thank you for using our platform.",
-      color: "#616161"
-    },
-  };
-
-  // fallback if status text is not matched
-  const s = statusMessages[status] || "";
-
-  return `
-<table width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif; background:#f7f7f7; padding:20px;">
-  <tr>
-    <td>
-      <table cellpadding="0" cellspacing="0" width="600" align="center" style="background:#ffffff; border-radius:8px; padding:30px;">
-        <tr>
-          <td>
-
-            <!-- Title -->
-            <h2 style="color:${s.color}; margin-bottom:10px;">${s.title}</h2>
-
-            <!-- Greeting -->
-            <p style="font-size:16px; color:#333;">Hello ${name},</p>
-
-            <!-- Status Message -->
-            <p style="font-size:15px; color:#555; line-height:1.6;">
-              ${s.message}
-            </p>
-
-            <!-- Booking Details -->
-            <table cellpadding="0" cellspacing="0" style="margin-top:20px;">
-              <tr><td style="padding:5px 0;"><strong>Service:</strong> ${service}</td></tr>
-              <tr><td style="padding:5px 0;"><strong>Date:</strong> ${date}</td></tr>
-              <tr><td style="padding:5px 0;"><strong>Time:</strong> ${startTime} - ${endTime}</td></tr>
-              <tr><td style="padding:5px 0;"><strong>Status:</strong> <span style="color:${s.color}; font-weight:bold;">${status}</span></td></tr>
-            </table>
-
-            <!-- Footer -->
-            <p style="margin-top:30px; font-size:14px; color:#777;">
-              Best Regards,<br/>
-              <strong>Home Service Management Team</strong>
-            </p>
-
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-  `;
-};
-
-module.exports = {
-    welcomeUserTamplate,
-    forgotPasswordTamplate,
-    slotBookingRequestTemplate,
-    slotBookingStatusTemplate
 }
+
+function bookingFailedEmailTemplate({
+  userName,
+  services,
+  businessName,
+  customerPortalUrl,
+}) {
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Failed</title>
+    <style type="text/css">
+      @media only screen and (max-width: 600px) {
+        .container { width: 100% !important; }
+        .header { padding: 16px !important; font-size: 20px !important; }
+        .content { padding: 18px !important; }
+        .service-item { font-size: 13px !important; padding: 8px 0 !important; }
+        .cta-button { width: 100% !important; padding: 14px !important; box-sizing: border-box !important; }
+        .footer-text { font-size: 11px !important; }
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5;">
+    
+    <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f0f2f5;">
+      <tr>
+        <td style="padding: 30px 16px;">
+          
+          <!-- Main Container -->
+          <table role="presentation" class="container" style="width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); border-collapse: collapse; overflow: hidden;">
+            
+            <!-- Header -->
+            <tr>
+              <td class="header" style="background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%); padding: 28px 24px; text-align: center; color: #ffffff; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">
+                ✕ Payment Failed
+              </td>
+            </tr>
+            
+            <!-- Content -->
+            <tr>
+              <td class="content" style="padding: 32px 28px;">
+                
+                <!-- Greeting -->
+                <p style="margin: 0 0 8px 0; font-size: 16px; color: #2c3e50; font-weight: 600;">
+                  Hi ${userName},
+                </p>
+                <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #546e7a;">
+                  Unfortunately, we weren't able to process your payment. Your booking was not completed.
+                </p>
+
+                <!-- Alert Box -->
+                <div style="background-color: #ffebee; border-left: 4px solid #d32f2f; padding: 16px; border-radius: 4px; margin: 24px 0;">
+                  <p style="margin: 0; font-size: 13px; color: #c62828; font-weight: 500;">
+                    Please try again or use a different payment method.
+                  </p>
+                </div>
+
+                <!-- Services Attempted -->
+                <h3 style="margin: 24px 0 14px 0; font-size: 17px; color: #1e3c72; font-weight: 700;">
+                  Services Attempted
+                </h3>
+                <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f8f9fa; padding: 16px; border-radius: 6px;">
+                  ${services
+                    .map(
+                      (s) => `
+                    <tr class="service-item">
+                      <td style="padding: 8px 0; font-size: 14px; color: #546e7a;">${s.name}</td>
+                      <td style="text-align: right; padding: 8px 0; font-size: 14px; color: #2c3e50; font-weight: 600;">₹${s.price}</td>
+                    </tr>
+                  `
+                    )
+                    .join("")}
+                </table>
+
+                <p style="margin-top: 14px; font-size: 14px; color: #546e7a;">
+                  <strong style="color: #2c3e50;">Service Provider:</strong> ${businessName}
+                </p>
+
+                <!-- CTA Button -->
+                <div style="text-align: center; margin-top: 32px;">
+                  <a href="${customerPortalUrl}" class="cta-button" style="display: inline-block; background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%); color: white; padding: 14px 32px; border-radius: 6px; font-size: 15px; font-weight: 600; text-decoration: none; border: none; cursor: pointer;">
+                    Retry Payment →
+                  </a>
+                </div>
+
+                <!-- Support Section -->
+                <div style="background-color: #f8f9fa; padding: 16px; border-radius: 6px; margin-top: 28px;">
+                  <p style="margin: 0 0 8px 0; font-size: 13px; color: #90a4ae; font-weight: 600;">HAVING ISSUES?</p>
+                  <p style="margin: 0; font-size: 13px; color: #546e7a; line-height: 1.6;">
+                    If the issue persists, please reach out to our support team and we'll help you resolve it.
+                  </p>
+                </div>
+
+                <!-- Footer -->
+                <p class="footer-text" style="margin-top: 28px; font-size: 12px; color: #90a4ae; text-align: center; line-height: 1.6;">
+                  <a href="mailto:support@example.com" style="color: #d32f2f; text-decoration: none; font-weight: 600;">Contact Support</a>
+                </p>
+              </td>
+            </tr>
+            
+            <!-- Footer Divider -->
+            <tr>
+              <td style="height: 1px; background-color: #eceff1;"></td>
+            </tr>
+            
+            <!-- Branding Footer -->
+            <tr>
+              <td style="padding: 16px 28px; text-align: center; background-color: #fafbfc;">
+                <p style="margin: 0; font-size: 12px; color: #90a4ae;">
+                  © 2024 ${businessName}. All rights reserved.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+  </html>
+  `;
+}
+module.exports = {
+  welcomeUserTamplate,
+  forgotPasswordTamplate,
+  bookingSuccessEmailTemplate,
+  bookingFailedEmailTemplate,
+};

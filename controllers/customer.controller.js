@@ -245,7 +245,7 @@ const getCustomerBookings = async (req, res) => {
       ...b,
       business: {
         id: b.businessProfile?.id,
-        name: b.businessProfile?.name,
+        name: b.businessProfile?.businessName,
         email: b.businessProfile?.user?.email,
         phone: b.businessProfile?.user?.mobile,
       },
@@ -269,39 +269,56 @@ const getCustomerBookings = async (req, res) => {
 // CANCEL BOOKING
 const cancelBooking = async (req, res) => {
   const customerId = req.user.id;
-  const { bookingId } = req.params;
+  const { bookingId } = req.body;
+
+  console.log("BookingId", bookingId);
 
   try {
     const booking = await prisma.Booking.findUnique({
-      where: { id: bookingId },
+      where: { id: bookingId }, // Fetch related slot + payment
     });
 
+    // Validate booking ownership
     if (!booking || booking.userId !== customerId) {
       return res
         .status(404)
         .json({ success: false, msg: "Booking not found or not yours." });
     }
 
-    if (booking.status !== "Pending") {
+    // Only allow cancelling pending bookings
+    if (booking.bookingStatus !== "PENDING") {
       return res.status(400).json({
         success: false,
-        msg: `Cannot cancel a ${booking.status.toLowerCase()} booking.`,
+        msg: `Cannot cancel a ${booking.bookingStatus.toLowerCase()} booking.`,
       });
     }
 
-    await prisma.booking.delete({
+    // 1️⃣ Update booking status to CANCELLED
+    await prisma.Booking.update({
       where: { id: bookingId },
+      data: {
+        bookingStatus: "CANCELLED",
+        paymentStatus: "CANCELLED",
+        updatedAt: new Date(),
+      },
     });
-    await prisma.Slot.update({
-      where: { id: booking.slotId },
-      data: { isBooked: false, bookedById: null },
-    });
+
+    // 2️⃣ Update payment record (if exists)
+    if (booking.payment) {
+      await prisma.CustomerPayment.update({
+        where: { id: booking.payment.id },
+        data: {
+          status: "CANCELLED",
+        },
+      });
+    }
 
     return res
       .status(200)
       .json({ success: true, msg: "Booking cancelled successfully." });
   } catch (err) {
-    console.error(err);
+    console.error("Cancel Booking Error:", err);
+
     return res
       .status(500)
       .json({ success: false, msg: "Could not cancel booking." });

@@ -11,6 +11,7 @@ const ProviderController = require("../controllers/provider.controller");
 // Profile Route
 route.get("/profile", checkAuthToken(), commonRoutes.getUserProfile);
 route.get("/me/:token", commonRoutes.getMe);
+route.delete("/profile/:userId", commonRoutes.deleteProfile);
 
 // Address Routes
 route

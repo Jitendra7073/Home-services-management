@@ -68,6 +68,31 @@ const getMe = async (req, res) => {
   }
 };
 
+const deleteProfile = async (req, res) => {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      msg: "User Id is required.",
+    });
+  }
+  try {
+    const res = await prisma.user.delete({
+      where: { id: userId },
+    });
+    return res.status(200).json({
+      success: true,
+      msg: "User deleted successfully.",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      msg: "Server Error: Could not delete user.",
+    });
+  }
+};
 // ==================================== ADDRESS ====================================
 
 const getAddress = async (req, res) => {
@@ -168,4 +193,5 @@ module.exports = {
   deleteAddress,
   getAddress,
   getMe,
+  deleteProfile,
 };

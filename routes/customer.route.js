@@ -11,7 +11,7 @@ route.get("/providers/:providerId", CustomerController.getProviderById);
 // SLOT BOOKING
 route.post("/book-slot", CustomerController.bookSlot);
 route.get("/bookings", CustomerController.getCustomerBookings);
-route.patch("/bookings/:bookingId/cancel", CustomerController.cancelBooking);
+route.patch("/bookings/cancel", CustomerController.cancelBooking);
 
 // Add to cart
 route

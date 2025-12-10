@@ -81,11 +81,11 @@ const login = async (req, res) => {
     const token = assignToken(user);
 
     res.cookie("token", token, {
-      httpOnly: true,
+      httpOnly: false,
       // secure: true,
       secure: process.env.NODE_ENV === "development",
       sameSite: "lax",
-      maxAge: 60 * 60 * 60 * 1000,
+      maxAge: 60 * 60 * 1000,
       path: "/",
     });
 
