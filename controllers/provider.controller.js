@@ -673,7 +673,6 @@ const createSlot = async (req, res) => {
 
 const getAllSlotsByServiceId = async (req, res) => {
   const userId = req.user.id;
-  const { serviceId } = req.params;
   try {
     // Check if provider's business profile exists
     const business = await prisma.BusinessProfile.findUnique({
@@ -687,24 +686,8 @@ const getAllSlotsByServiceId = async (req, res) => {
       });
     }
 
-    // Verify that the service exists and belongs to this business
-    const service = await prisma.Service.findFirst({
-      where: {
-        id: serviceId,
-        businessProfileId: business.id,
-      },
-    });
-
-    if (!service) {
-      return res.status(404).json({
-        success: false,
-        msg: "Service not found or does not belong to your business.",
-      });
-    }
-
     const slots = await prisma.Slot.findMany({
       where: {
-        serviceId: serviceId,
         businessProfileId: business.id,
       },
     });
