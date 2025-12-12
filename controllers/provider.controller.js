@@ -586,19 +586,17 @@ const deleteService = async (req, res) => {
 const createSlot = async (req, res) => {
   const userId = req.user.id;
 
-  // Validate input
-  const { error, value } = slotProfileSchema.validate(req.body, {
-    abortEarly: false,
-  });
-  if (error) {
-    return res.status(400).json({
-      success: false,
-      msg: error.details.map((e) => e.message),
-    });
-  }
-
   try {
-    // Check if provider's business profile exists
+    const {
+      startTime,
+      endTime,
+      breakStartTime,
+      breakEndTime,
+      slotsDuration,
+      singleSlot,
+    } = req.body;
+
+    // Find provider business
     const business = await prisma.BusinessProfile.findUnique({
       where: { userId },
     });
@@ -609,61 +607,113 @@ const createSlot = async (req, res) => {
         msg: "Business profile not found. Please create one first.",
       });
     }
-
-    // Verify that the service exists and belongs to this business
-    const service = await prisma.Service.findFirst({
-      where: {
-        businessProfileId: business.id,
-      },
+    // Fetch existing slots
+    const existingSlots = await prisma.Slot.findMany({
+      where: { businessProfileId: business.id },
     });
 
-    if (!service) {
-      return res.status(404).json({
-        success: false,
-        msg: "Service not found or does not belong to your business.",
+    const normalizeTime = (t) => t.trim().toUpperCase();
+
+    // CASE 1: CREATE A SINGLE SLOT
+    if (singleSlot) {
+      const selectedTime = normalizeTime(singleSlot);
+
+      const conflict = existingSlots.some(
+        (slot) => normalizeTime(slot.time) === selectedTime
+      );
+
+      if (conflict) {
+        return res.status(400).json({
+          success: false,
+          msg: `Slot ${selectedTime} already exists.`,
+        });
+      }
+
+      const newSlot = await prisma.Slot.create({
+        data: {
+          time: selectedTime,
+          businessProfileId: business.id,
+        },
+      });
+
+      return res.status(201).json({
+        success: true,
+        msg: "Single slot created successfully",
+        slot: newSlot,
       });
     }
 
-    // Find all existing slots for this business
-    const existingSlots = await prisma.Slot.findMany({
-      where: {
-        businessProfileId: business.id,
-      },
-    });
+    // CASE 2: GENERATE MULTIPLE SLOTS
+    function convertToMinutes(timeStr) {
+      let [hours, minutes] = timeStr.split(":");
+      minutes = minutes.replace("AM", "").replace("PM", "").trim();
+      let modifier = timeStr.includes("PM") ? "PM" : "AM";
 
-    function normalizeTime(timeString) {
-      return timeString.trim().toUpperCase();
+      hours = parseInt(hours);
+      minutes = parseInt(minutes);
+
+      if (modifier === "PM" && hours !== 12) hours += 12;
+      if (modifier === "AM" && hours === 12) hours = 0;
+
+      return hours * 60 + minutes;
     }
 
-    const selectedTime = normalizeTime(value.time);
+    function formatTime(minutes) {
+      let hrs = Math.floor(minutes / 60);
+      let mins = minutes % 60;
+      let ampm = hrs >= 12 ? "PM" : "AM";
 
-    const slotTimeConflict = existingSlots.some((slot) => {
-      const savedTime = normalizeTime(slot.time);
+      hrs = hrs % 12;
+      if (hrs === 0) hrs = 12;
 
-      return savedTime === selectedTime;
-    });
+      return `${hrs}:${mins.toString().padStart(2, "0")} ${ampm}`;
+    }
 
-    if (slotTimeConflict) {
+    const start = convertToMinutes(startTime);
+    const end = convertToMinutes(endTime);
+    const breakStart = convertToMinutes(breakStartTime);
+    const breakEnd = convertToMinutes(breakEndTime);
+    const interval = parseInt(slotsDuration);
+
+    let generatedSlots = [];
+
+    for (let time = start; time < end; time += interval) {
+      // Skip break time
+      if (time >= breakStart && time < breakEnd) continue;
+
+      const formatted = formatTime(time);
+
+      const exists = existingSlots.some(
+        (slot) => normalizeTime(slot.time) === normalizeTime(formatted)
+      );
+
+      if (!exists) {
+        generatedSlots.push({
+          time: formatted,
+          businessProfileId: business.id,
+        });
+      }
+    }
+
+    if (generatedSlots.length === 0) {
       return res.status(400).json({
         success: false,
-        msg: "This time slot already exists.",
+        msg: "No new slots were added. All slots already exist.",
       });
     }
 
-    // Create slot
-    const newSlot = await prisma.Slot.create({
-      data: {
-        time: value.time,
-        businessProfileId: business.id,
-      },
+    const created = await prisma.Slot.createMany({
+      data: generatedSlots,
     });
 
     return res.status(201).json({
       success: true,
-      msg: "Slot created successfully.",
-      slot: newSlot,
+      msg: "Slots generated successfully",
+      totalCreated: created.count,
+      slots: generatedSlots,
     });
   } catch (err) {
+    console.error(err);
     return res.status(500).json({
       success: false,
       msg: "Server Error: Could not create slot.",

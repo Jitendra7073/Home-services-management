@@ -23,8 +23,10 @@ route
   .delete(ProviderController.deleteService);
 
 // SLOT ROUTES
-route.get("/slots", ProviderController.getAllSlotsByServiceId);
-route.post("/slot", ProviderController.createSlot);
+route
+  .route("/slots")
+  .get(ProviderController.getAllSlotsByServiceId)
+  .post(ProviderController.createSlot);
 route.delete("/slot/:slotId", ProviderController.deleteSlot);
 
 // Booking Route
